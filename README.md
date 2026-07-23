@@ -1,3 +1,6 @@
+> 📱 Looking for the **I-485 Interview Prep** mobile app (iOS + Android)?
+> It lives in [`interview-prep/`](interview-prep/) — see its README to run it.
+
 # Sales Rep Territory Map
 
 An interactive US map of the field sales team. Single self-contained page —

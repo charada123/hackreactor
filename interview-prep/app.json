@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "I-485 Interview Prep",
+    "slug": "i485-interview-prep",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "i485prep",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0B7A5B"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.i485prep.app"
+    },
+    "android": {
+      "package": "com.i485prep.app"
+    }
+  }
+}
