@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { interviewTypeLabels } from "@/lib/questions";
+import { useSpeechRecognition, useSpeechSynthesis } from "@/lib/useVoice";
 import type {
   AnswerFeedback,
   ChatTurn,
@@ -60,6 +61,12 @@ export default function SimulatorPage() {
   const [lastFeedback, setLastFeedback] = useState<AnswerFeedback | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Voice mode: officer speaks (TTS) + you dictate answers (STT).
+  const synth = useSpeechSynthesis();
+  const recog = useSpeechRecognition();
+  const [voiceMode, setVoiceMode] = useState(false);
+  const spokenRef = useRef<string>("");
+
   const currentQuestion = useMemo(() => {
     const officer = turns.filter((t) => t.role === "officer");
     return officer[officer.length - 1]?.text ?? "";
@@ -90,6 +97,7 @@ export default function SimulatorPage() {
     setTurns([]);
     setAnswered([]);
     setLastFeedback(null);
+    spokenRef.current = "";
     try {
       const first = await fetchOfficer([]);
       setTurns([{ role: "officer", text: first }]);
@@ -171,12 +179,50 @@ export default function SimulatorPage() {
   );
 
   const stopNow = useCallback(() => {
+    recog.stop();
+    synth.cancel();
     finishInterview(answered);
-  }, [answered, finishInterview]);
+  }, [answered, finishInterview, recog, synth]);
+
+  // Speak each new officer question when voice mode is on.
+  useEffect(() => {
+    if (!voiceMode || phase !== "live") return;
+    if (currentQuestion && currentQuestion !== spokenRef.current) {
+      spokenRef.current = currentQuestion;
+      synth.speak(currentQuestion);
+    }
+  }, [voiceMode, phase, currentQuestion, synth.speak]);
+
+  // Stop any speech the moment voice mode is turned off.
+  useEffect(() => {
+    if (!voiceMode) synth.cancel();
+  }, [voiceMode, synth.cancel]);
+
+  const handleSend = useCallback(() => {
+    recog.stop();
+    submitAnswer();
+  }, [recog.stop, submitAnswer]);
+
+  const toggleMic = useCallback(() => {
+    if (recog.listening) {
+      recog.stop();
+      return;
+    }
+    synth.cancel(); // avoid the mic hearing the officer's voice
+    recog.start((text) => setDraft((d) => (d ? d + " " : "") + text));
+  }, [recog.listening, recog.stop, recog.start, synth.cancel]);
 
   if (phase === "setup") {
     return (
-      <SetupScreen config={config} setConfig={setConfig} onStart={start} />
+      <SetupScreen
+        config={config}
+        setConfig={setConfig}
+        onStart={start}
+        voiceMode={voiceMode}
+        setVoiceMode={setVoiceMode}
+        ttsSupported={synth.supported}
+        sttSupported={recog.supported}
+      />
     );
   }
 
@@ -195,9 +241,21 @@ export default function SimulatorPage() {
             {interviewTypeLabels[config.interviewType]} · {config.mood} officer
           </h1>
         </div>
-        <button onClick={stopNow} className="btn-ghost">
-          Finish & see report
-        </button>
+        <div className="flex items-center gap-2">
+          {synth.supported ? (
+            <button
+              onClick={() => setVoiceMode((v) => !v)}
+              className={`btn ${voiceMode ? "bg-brand-50 text-brand-700" : "btn-ghost"}`}
+              title={voiceMode ? "Officer voice is on" : "Officer voice is off"}
+            >
+              {voiceMode ? <SpeakerOnIcon /> : <SpeakerOffIcon />}
+              <span className="hidden sm:inline">{voiceMode ? "Voice on" : "Voice off"}</span>
+            </button>
+          ) : null}
+          <button onClick={stopNow} className="btn-ghost">
+            Finish & see report
+          </button>
+        </div>
       </div>
 
       <div className="mb-4 h-2 overflow-hidden rounded-full bg-surface-mute">
@@ -213,21 +271,51 @@ export default function SimulatorPage() {
             {busy ? <TypingBubble /> : null}
           </div>
           <div className="border-t border-black/[0.06] p-3">
+            {recog.listening ? (
+              <div className="mb-2 flex items-center gap-2 px-1 text-xs font-semibold text-brand-600">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-brand-500" />
+                </span>
+                Listening…
+                {recog.interim ? (
+                  <span className="font-normal text-ink-soft">“{recog.interim}”</span>
+                ) : null}
+              </div>
+            ) : null}
             <div className="flex items-end gap-2">
+              {recog.supported ? (
+                <button
+                  onClick={toggleMic}
+                  aria-label={recog.listening ? "Stop dictation" : "Dictate your answer"}
+                  title={recog.listening ? "Stop dictation" : "Dictate your answer"}
+                  className={`grid h-[52px] w-[52px] shrink-0 place-items-center rounded-xl border transition ${
+                    recog.listening
+                      ? "border-brand-400 bg-brand-500 text-white"
+                      : "border-black/10 bg-white text-ink-soft hover:bg-surface-mute"
+                  }`}
+                >
+                  <MicIcon />
+                </button>
+              ) : null}
               <textarea
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                     e.preventDefault();
-                    submitAnswer();
+                    handleSend();
                   }
                 }}
                 rows={2}
-                placeholder="Answer out loud, then type your answer…  (⌘/Ctrl + Enter to send)"
+                placeholder={
+                  recog.supported
+                    ? "Speak with the mic, or type…  (⌘/Ctrl + Enter to send)"
+                    : "Answer out loud, then type your answer…  (⌘/Ctrl + Enter to send)"
+                }
                 className="min-h-[52px] flex-1 resize-none rounded-xl border border-black/10 bg-surface-soft px-3.5 py-2.5 text-sm outline-none focus:border-brand-300 focus:ring-2 focus:ring-brand-100"
               />
-              <button onClick={submitAnswer} disabled={busy || !draft.trim()} className="btn-primary h-[52px] disabled:opacity-40">
+              <button onClick={handleSend} disabled={busy || !draft.trim()} className="btn-primary h-[52px] disabled:opacity-40">
                 Send
               </button>
             </div>
@@ -272,11 +360,20 @@ function SetupScreen({
   config,
   setConfig,
   onStart,
+  voiceMode,
+  setVoiceMode,
+  ttsSupported,
+  sttSupported,
 }: {
   config: SimulatorConfig;
   setConfig: (c: SimulatorConfig) => void;
   onStart: () => void;
+  voiceMode: boolean;
+  setVoiceMode: (v: boolean) => void;
+  ttsSupported: boolean;
+  sttSupported: boolean;
 }) {
+  const voiceSupported = ttsSupported || sttSupported;
   return (
     <div className="container-x py-10">
       <div className="mx-auto max-w-3xl">
@@ -328,6 +425,40 @@ function SetupScreen({
                 </Choice>
               ))}
             </div>
+          </Field>
+
+          <Field label="Answer mode">
+            {voiceSupported ? (
+              <div className="grid grid-cols-2 gap-2">
+                <Choice active={!voiceMode} onClick={() => setVoiceMode(false)}>
+                  <div className="text-center">
+                    <div className="font-bold">⌨️ Text</div>
+                    <div className="text-[11px] font-normal text-ink-faint">Type your answers</div>
+                  </div>
+                </Choice>
+                <Choice active={voiceMode} onClick={() => setVoiceMode(true)}>
+                  <div className="text-center">
+                    <div className="font-bold">🎙️ Voice</div>
+                    <div className="text-[11px] font-normal text-ink-faint">
+                      {sttSupported ? "Speak your answers" : "Hear the officer"}
+                    </div>
+                  </div>
+                </Choice>
+              </div>
+            ) : (
+              <p className="text-sm text-ink-soft">
+                Voice mode isn&apos;t available in this browser. Try Chrome, Edge,
+                or Safari — you can still practice in text mode.
+              </p>
+            )}
+            {voiceMode ? (
+              <p className="mt-3 text-xs text-ink-faint">
+                {ttsSupported ? "The officer will read each question aloud. " : ""}
+                {sttSupported
+                  ? "Tap the mic during the interview to dictate your answer."
+                  : "Speech-to-text isn't supported here, so you'll type your answers."}
+              </p>
+            ) : null}
           </Field>
 
           <button onClick={onStart} className="btn-primary w-full py-3.5 text-base">
@@ -534,5 +665,35 @@ function Stat({ label, value }: { label: string; value: string }) {
       <div className="text-2xl font-extrabold tracking-tight">{value}</div>
       <div className="text-[11px] font-semibold uppercase tracking-wide text-ink-faint">{label}</div>
     </div>
+  );
+}
+
+function MicIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+      <path d="M5 11a7 7 0 0 0 14 0" />
+      <line x1="12" y1="18" x2="12" y2="22" />
+    </svg>
+  );
+}
+
+function SpeakerOnIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 9v6h4l5 4V5L8 9H4z" />
+      <path d="M16.5 8.5a5 5 0 0 1 0 7" />
+      <path d="M19 6a8 8 0 0 1 0 12" />
+    </svg>
+  );
+}
+
+function SpeakerOffIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 9v6h4l5 4V5L8 9H4z" />
+      <line x1="17" y1="9" x2="22" y2="14" />
+      <line x1="22" y1="9" x2="17" y2="14" />
+    </svg>
   );
 }

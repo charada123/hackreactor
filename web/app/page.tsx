@@ -5,6 +5,7 @@ const features = [
   { emoji: "🎙️", title: "AI Interview Simulator", body: "A realistic USCIS officer that asks one question at a time, listens, and follows up on what you say." },
   { emoji: "🗂️", title: "500+ Practice Questions", body: "Every category a real interview covers — relationship, employment, admissibility, and more." },
   { emoji: "🎭", title: "Officer Personalities", body: "Choose friendly, neutral, or strict, and set the difficulty from easy to hard." },
+  { emoji: "🎙️", title: "Voice Mode", body: "The officer reads questions aloud and you answer by speaking — a true-to-life rehearsal." },
   { emoji: "✅", title: "Document Checklist", body: "Know exactly what to bring, tracked and grouped so nothing is forgotten." },
   { emoji: "📈", title: "Readiness Score", body: "A single number that tells you how prepared you are — and what to drill next." },
   { emoji: "🧭", title: "Personalized Plan", body: "After each mock interview, get feedback and a focused list of weak areas." },

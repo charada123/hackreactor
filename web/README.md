@@ -41,13 +41,14 @@ Production build: `npm run build && npm run start`.
 | **AI Interview Simulator** (type / mood / difficulty → live chat → report) | ✅ | `app/simulator` |
 | Per-answer feedback (confidence, specificity, consistency, red flags) | ✅ | `app/api/feedback` + `lib/anthropic.ts` |
 | Mock-interview report (readiness, strengths, weak areas) | ✅ | `app/simulator` |
+| **Voice mode** — officer reads questions aloud (TTS) + dictate answers (STT) | ✅ | `lib/useVoice.ts` |
 | Question bank + study mode (categories, flashcards, bookmarks) | ✅ | `app/questions` |
 | Document checklist (grouped, progress tracked) | ✅ | `app/checklist` |
 | Case timeline (milestones with dates) | ✅ | `app/timeline` |
 | On-device persistence (progress, streak, bookmarks) | ✅ | `lib/store.ts` |
 | Scripted offline fallback for the AI | ✅ | `lib/scripted.ts` |
 | Database schema (Prisma / Postgres) | 📄 scaffolded | `prisma/schema.prisma` |
-| Auth, admin portal, analytics charts, gamification, voice mode | 🔜 planned | see below |
+| Auth, admin portal, analytics charts, gamification | 🔜 planned | see below |
 
 ## Architecture
 
@@ -91,8 +92,6 @@ These were in scope but are deliberately deferred so the core ships solid:
 - **Analytics charts** — scores over time, category heat map (data is already
   captured per session).
 - **Gamification** — streaks exist; add XP, levels, and achievement badges.
-- **Voice mode** — Web Speech API for speech-to-text answers and text-to-speech
-  officer questions.
 - **Admin portal** — manage questions, categories, and templates (the
   `QuestionBankItem` model is scaffolded).
 - **Multilingual interviews** and **PDF report export**.
