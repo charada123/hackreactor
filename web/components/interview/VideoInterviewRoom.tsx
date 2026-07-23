@@ -25,12 +25,12 @@ const BUDGET_SECONDS: Record<InterviewConfig["duration"], number> = {
   full: 42 * 60,
 };
 
-// Voice-activity / end-of-turn tuning.
-const SPEECH_ON = 0.08;
-const BARGE_ON = 0.15;
+// Voice-activity / end-of-turn tuning (calibrated for phone mics).
+const SPEECH_ON = 0.05;
+const BARGE_ON = 0.12;
 const END_SILENCE = 1300;
 const STILL_SILENCE = 600;
-const NO_SPEECH_NUDGE = 20000;
+const NO_SPEECH_NUDGE = 14000;
 const NO_SPEECH_GIVEUP = 32000;
 
 const CLOSING_LINE = "Thank you. This concludes your practice interview.";
@@ -230,6 +230,16 @@ export function VideoInterviewRoom({
   useEffect(() => {
     cancelledRef.current = false;
     let alive = true;
+    // Re-assert audio unlock on entry (belt-and-suspenders with the tap that
+    // brought us here) so the mic meter runs and the officer's voice plays.
+    media.resumeAudio();
+    try {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.resume();
+      }
+    } catch {
+      /* noop */
+    }
 
     async function runTurn(lastAnswer: string | null) {
       if (!alive || cancelledRef.current) return;

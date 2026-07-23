@@ -108,6 +108,24 @@ export function DeviceCheck({
     setSpeakerOk(true);
   };
 
+  // The tap that enters the room is our chance to unlock audio on iOS:
+  // resume the mic's audio graph AND prime speech synthesis so the officer's
+  // voice (spoken later from an async loop) is allowed to play.
+  const enterRoom = () => {
+    media.resumeAudio();
+    try {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.resume();
+        const primer = new SpeechSynthesisUtterance(" ");
+        primer.volume = 0.01;
+        window.speechSynthesis.speak(primer);
+      }
+    } catch {
+      /* noop */
+    }
+    onReady();
+  };
+
   const micOk = !media.micLost;
   const canBegin = micOk && micHeard && sttSupported;
 
@@ -192,7 +210,7 @@ export function DeviceCheck({
         )}
 
         <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
-          <button onClick={onReady} disabled={!canBegin} className="btn-primary px-8 py-3 disabled:opacity-40">
+          <button onClick={enterRoom} disabled={!canBegin} className="btn-primary px-8 py-3 disabled:opacity-40">
             Enter the interview room
           </button>
           <button onClick={onBack} className="btn-ghost px-8 py-3">

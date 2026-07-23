@@ -87,6 +87,7 @@ export class LocalTextToSpeech implements TextToSpeechProvider {
       if (v) u.voice = v;
       u.rate = this.rate;
       u.pitch = this.pitch;
+      u.volume = 1;
       let done = false;
       const finish = () => {
         if (done) return;
@@ -96,7 +97,18 @@ export class LocalTextToSpeech implements TextToSpeechProvider {
       u.onstart = () => opts?.onStart?.();
       u.onend = finish;
       u.onerror = finish;
+      // iOS Safari sometimes leaves synthesis paused — nudge it before/after.
+      try {
+        synth.resume();
+      } catch {
+        /* noop */
+      }
       synth.speak(u);
+      try {
+        synth.resume();
+      } catch {
+        /* noop */
+      }
       // Safety: some browsers drop onend for long utterances.
       setTimeout(finish, Math.min(20000, 1500 + text.length * 90));
     });

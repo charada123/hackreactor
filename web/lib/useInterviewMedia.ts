@@ -22,6 +22,8 @@ export interface InterviewMedia {
   switchCamera: () => Promise<void>;
   /** Average luminance (0..1) of the current camera frame, or null. */
   sampleBrightness: () => number | null;
+  /** Resume the audio graph — must be called from a user gesture on iOS. */
+  resumeAudio: () => void;
   stop: () => void;
 }
 
@@ -64,6 +66,9 @@ export function useInterviewMedia(): InterviewMedia {
       source.connect(analyser);
       audioCtxRef.current = ctx;
       analyserRef.current = analyser;
+      // iOS starts the context suspended; try to resume (best effort here,
+      // and again from an explicit gesture via resumeAudio()).
+      if (ctx.state === "suspended") void ctx.resume().catch(() => {});
       const buf = new Uint8Array(analyser.fftSize);
       const tick = () => {
         analyser.getByteTimeDomainData(buf);
@@ -197,6 +202,11 @@ export function useInterviewMedia(): InterviewMedia {
     }
   }, []);
 
+  const resumeAudio = useCallback(() => {
+    const ctx = audioCtxRef.current;
+    if (ctx && ctx.state === "suspended") void ctx.resume().catch(() => {});
+  }, []);
+
   const stop = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
@@ -229,6 +239,7 @@ export function useInterviewMedia(): InterviewMedia {
     toggleCamera,
     switchCamera,
     sampleBrightness,
+    resumeAudio,
     stop,
   };
 }

@@ -89,79 +89,79 @@ export function OfficerVideo({
         aria-label={`${persona.name}, practice interviewer`}
       >
         <defs>
-          <linearGradient id="suit" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor={a} stopOpacity="0.9" />
-            <stop offset="1" stopColor={a} stopOpacity="0.55" />
+          <linearGradient id="blazer" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#2a3a56" />
+            <stop offset="1" stopColor="#182640" />
           </linearGradient>
-          <linearGradient id="head" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#C9D2DE" />
-            <stop offset="1" stopColor="#9AA6B6" />
+          <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#EAC3A4" />
+            <stop offset="1" stopColor="#D49C77" />
+          </linearGradient>
+          <linearGradient id="hair" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#3b362f" />
+            <stop offset="1" stopColor="#26221d" />
           </linearGradient>
         </defs>
 
         <g className="iv-breathe">
-          {/* Shoulders / torso */}
-          <path
-            d="M70 320 C 78 250, 130 224, 200 224 C 270 224, 322 250, 330 320 Z"
-            fill="url(#suit)"
-          />
-          <path
-            d="M182 232 L200 262 L218 232 C 214 226, 186 226, 182 232 Z"
-            fill="#EEF2F8"
-            opacity="0.9"
-          />
-          {/* collar */}
-          <path d="M176 230 L200 250 L176 250 Z" fill="#0d1a2e" opacity="0.35" />
-          <path d="M224 230 L200 250 L224 250 Z" fill="#0d1a2e" opacity="0.35" />
+          {/* Blazer / shoulders */}
+          <path d="M58 320 C 70 248, 122 222, 200 222 C 278 222, 330 248, 342 320 Z" fill="url(#blazer)" />
+          {/* Shirt */}
+          <path d="M176 226 L200 300 L224 226 C 218 236, 182 236, 176 226 Z" fill="#F2F5FA" />
+          {/* Lapels */}
+          <path d="M176 226 L200 264 L170 300 L146 300 C 148 260, 160 234, 176 226 Z" fill="url(#blazer)" />
+          <path d="M224 226 L200 264 L230 300 L254 300 C 252 260, 240 234, 224 226 Z" fill="url(#blazer)" />
+          {/* Tie */}
+          <path d="M195 231 L205 231 L203 244 L209 300 L191 300 L197 244 Z" fill={a} />
+          <path d="M195 231 L205 231 L200 239 Z" fill={a} opacity="0.85" />
 
           {/* Neck */}
-          <rect x="184" y="196" width="32" height="42" rx="14" fill="#95A2B2" />
+          <rect x="185" y="196" width="30" height="40" rx="12" fill="url(#skin)" />
+          <path d="M185 223 C 194 231, 206 231, 215 223 L215 236 L185 236 Z" fill="#000" opacity="0.10" />
 
           {/* Head */}
           <g className="iv-sway" style={{ transformBox: "fill-box" }}>
-            <ellipse cx="200" cy="150" rx="52" ry="60" fill="url(#head)" />
+            {/* Ears */}
+            <ellipse cx="151" cy="152" rx="8" ry="12" fill="url(#skin)" />
+            <ellipse cx="249" cy="152" rx="8" ry="12" fill="url(#skin)" />
+            {/* Face */}
+            <path d="M152 138 C 152 100, 174 84, 200 84 C 226 84, 248 100, 248 138 C 248 173, 227 200, 200 200 C 173 200, 152 173, 152 138 Z" fill="url(#skin)" />
             {/* soft rim light */}
-            <ellipse cx="222" cy="140" rx="46" ry="54" fill={a} opacity="0.08" />
+            <path d="M200 84 C 226 84, 248 100, 248 138 C 248 168, 231 193, 208 199 C 225 188, 236 164, 236 138 C 236 108, 220 92, 200 90 Z" fill={a} opacity="0.10" />
+            {/* Hair */}
+            <path d="M149 142 C 145 96, 176 76, 200 76 C 224 76, 255 96, 251 142 C 249 127, 244 117, 238 111 C 236 119, 231 123, 225 122 C 213 112, 187 112, 175 122 C 169 123, 164 119, 162 111 C 156 117, 151 127, 149 142 Z" fill="url(#hair)" />
 
             {/* Brows */}
-            <rect x="168" y="132" width="24" height="4" rx="2" fill="#5c6674" opacity="0.6" />
-            <rect x="208" y="132" width="24" height="4" rx="2" fill="#5c6674" opacity="0.6" />
+            <path d="M170 130 C 176 126, 187 126, 192 130" stroke="#3a352e" strokeWidth="3.4" fill="none" strokeLinecap="round" />
+            <path d="M208 130 C 213 126, 224 126, 230 130" stroke="#3a352e" strokeWidth="3.4" fill="none" strokeLinecap="round" />
 
             {/* Eyes */}
             <g>
-              <ellipse cx="180" cy="148" rx="9" ry="6.5" fill="#fff" />
-              <circle cx={180} cy={148 + pupilDy} r="3.4" fill="#2a3340" />
-              {/* eyelid (blink) */}
-              <rect
-                className="iv-blink"
-                x="170"
-                y="141"
-                width="20"
-                height="8"
-                rx="4"
-                fill="url(#head)"
-              />
+              <ellipse cx="181" cy="143" rx="9" ry="6" fill="#fff" />
+              <g transform={`translate(0 ${pupilDy})`}>
+                <circle cx="181" cy="143" r="4.3" fill="#5b4634" />
+                <circle cx="181" cy="143" r="2.1" fill="#1b1410" />
+                <circle cx="182.6" cy="141.4" r="1" fill="#fff" />
+              </g>
+              <rect className="iv-blink" x="171" y="136" width="20" height="8" rx="3" fill="url(#skin)" />
             </g>
             <g>
-              <ellipse cx="220" cy="148" rx="9" ry="6.5" fill="#fff" />
-              <circle cx={220} cy={148 + pupilDy} r="3.4" fill="#2a3340" />
-              <rect
-                className="iv-blink delay"
-                x="210"
-                y="141"
-                width="20"
-                height="8"
-                rx="4"
-                fill="url(#head)"
-              />
+              <ellipse cx="219" cy="143" rx="9" ry="6" fill="#fff" />
+              <g transform={`translate(0 ${pupilDy})`}>
+                <circle cx="219" cy="143" r="4.3" fill="#5b4634" />
+                <circle cx="219" cy="143" r="2.1" fill="#1b1410" />
+                <circle cx="220.6" cy="141.4" r="1" fill="#fff" />
+              </g>
+              <rect className="iv-blink delay" x="209" y="136" width="20" height="8" rx="3" fill="url(#skin)" />
             </g>
 
             {/* Nose */}
-            <path d="M200 154 C 197 164, 197 168, 200 170" stroke="#7b8695" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+            <path d="M200 146 C 197 158, 195 163, 201 166 C 204 167, 206 166, 207 164" stroke="#b5825f" strokeWidth="2.4" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.75" />
 
             {/* Mouth (animated) */}
-            <ellipse cx="200" cy="182" rx="13" ry={mouthRy} fill="#5b3a3f" />
-            <ellipse cx="200" cy={182 - mouthRy * 0.4} rx="12" ry={mouthRy * 0.5} fill="#c98d90" opacity="0.5" />
+            <path d="M187 177 C 193 173, 207 173, 213 177 C 207 175, 193 175, 187 177 Z" fill="#9a5049" />
+            <ellipse cx="200" cy="180" rx="11" ry={mouthRy} fill="#7a3f3a" />
+            <ellipse cx="200" cy={180 + mouthRy * 0.5} rx="9" ry={mouthRy * 0.5} fill="#c98d86" opacity="0.65" />
           </g>
         </g>
 
