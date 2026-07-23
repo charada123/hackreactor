@@ -40,8 +40,9 @@ Production build: `npm run build && npm run start`.
 | Dashboard (readiness score, streak, sessions, recommendations) | ✅ | `app/dashboard` |
 | **AI Interview Simulator** (type / mood / difficulty → live chat → report) | ✅ | `app/simulator` |
 | Per-answer feedback (confidence, specificity, consistency, red flags) | ✅ | `app/api/feedback` + `lib/anthropic.ts` |
-| Mock-interview report (readiness, strengths, weak areas) | ✅ | `app/simulator` |
-| **Voice mode** — officer reads questions aloud (TTS) + dictate answers (STT) | ✅ | `lib/useVoice.ts` |
+| Mock-interview report (readiness, strengths, weak areas) | ✅ | `components/interview/InterviewReport` |
+| **Video interview room** — voice-to-voice, webcam self-view, no typing | ✅ | `components/interview/VideoInterviewRoom` |
+| Interviewer personas + voice preview, device/system check | ✅ | `components/interview/{PersonaSelector,DeviceCheck}` |
 | Question bank + study mode (categories, flashcards, bookmarks) | ✅ | `app/questions` |
 | Document checklist (grouped, progress tracked) | ✅ | `app/checklist` |
 | Case timeline (milestones with dates) | ✅ | `app/timeline` |
@@ -49,6 +50,54 @@ Production build: `npm run build && npm run start`.
 | Scripted offline fallback for the AI | ✅ | `lib/scripted.ts` |
 | Database schema (Prisma / Postgres) | 📄 scaffolded | `prisma/schema.prisma` |
 | Auth, admin portal, analytics charts, gamification | 🔜 planned | see below |
+
+## The video interview (v2)
+
+The interview is a **voice-to-voice video call**, not a chatbot — there is no
+answer text box and no send button. Flow:
+
+`setup → permission (privacy modal) → device check → video room → report`
+
+- **Setup** — interview type, **interviewer persona** (with a voice preview),
+  officer mood, difficulty, and length (Quick ~10m / Standard ~20m / Full ~35–45m).
+- **Device check** — camera, microphone, speaker, connection, lighting, and
+  face visibility. You cannot begin until the **microphone is working**; a poor
+  camera is only a warning.
+- **Video room** — the AI officer (an animated professional persona placeholder)
+  speaks each question aloud; your webcam shows in a draggable self-view. A
+  real-time pipeline runs: mic input → **voice-activity / end-of-turn detection**
+  → **speech-to-text** → adaptive next question → **text-to-speech** → synced
+  officer animation. You can interrupt the officer (barge-in). Controls: mute,
+  camera on/off, flip camera, hide self-view, captions (off by default),
+  fullscreen, end. Only discreet status cues appear — *Officer speaking*,
+  *Listening…*, *Reviewing your response…* — never a live score.
+- **Report** — scored feedback (clarity, specificity, consistency, confidence,
+  completeness, pacing), weak areas, possible timeline inconsistencies,
+  documents to review, a recommended next session, and the **full transcript**
+  with per-answer guidance. Camera and mic are released the moment the interview
+  ends. A **Delete session** control clears it from the browser.
+
+### Provider abstraction (swap in production services)
+
+The room depends only on interfaces in `lib/interviewProviders.ts`, with
+browser-native implementations so the prototype works with no API keys:
+
+| Interface | Prototype impl | Production swap |
+| --- | --- | --- |
+| `TextToSpeechProvider` | Web Speech `speechSynthesis` | streaming neural TTS / realtime voice |
+| `SpeechToTextProvider` | Web Speech `SpeechRecognition` | streaming ASR |
+| `RealtimeConversationProvider` | adaptive engine (`lib/interviewEngine.ts`) | Claude (`/api/interview`) or a realtime model |
+| `AvatarProvider` | `OfficerVideo` (animated SVG persona) | real-time avatar / lip-synced video vendor |
+
+No paid vendor is hard-coded; each is a documented plug-point.
+
+### Privacy
+
+Camera/mic are never accessed before explicit permission; the privacy modal
+explains the posture up front. **Raw video and audio are never uploaded or
+stored** — speech is transcribed on-device, and only the text transcript is kept
+locally for your report. Media tracks stop automatically when the session ends,
+and any session can be deleted.
 
 ## Architecture
 
@@ -64,10 +113,19 @@ web/
 │   └── api/
 │       ├── interview/      # POST → officer's next question (Claude or scripted)
 │       └── feedback/       # POST → scored answer feedback (Claude or scripted)
-├── components/             # SiteNav, ScoreRing, Reveal, …
+├── components/
+│   ├── interview/          # VideoInterviewRoom, OfficerVideo, ApplicantCamera,
+│   │                       #   DeviceCheck, PersonaSelector, PermissionModal,
+│   │                       #   EndInterviewDialog, MicrophoneTroubleshooter,
+│   │                       #   InterviewReport
+│   └── SiteNav, ScoreRing, Reveal, …
 ├── lib/
-│   ├── anthropic.ts        # Claude client + officer/grader prompts
-│   ├── scripted.ts         # offline fallback engine
+│   ├── useInterviewMedia.ts # camera/mic capture, audio level, VAD backbone
+│   ├── interviewProviders.ts# STT/TTS/Avatar/RealtimeConversation abstraction
+│   ├── interviewEngine.ts   # adaptive sections + content-aware follow-ups
+│   ├── personas.ts          # interviewer personas
+│   ├── anthropic.ts        # Claude client + officer/grader prompts (optional AI)
+│   ├── scripted.ts         # offline answer-grading heuristics
 │   ├── questions.ts        # question bank + categories
 │   ├── documents.ts        # checklist data
 │   ├── timeline.ts         # milestone data

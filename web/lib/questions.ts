@@ -137,4 +137,4 @@ export const typeCategoryEmphasis: Record<InterviewType, string[]> = {
 };
 
 export const DISCLAIMER =
-  "This is an educational practice tool. Questions are common, publicly-known patterns — not the exact questions USCIS will ask — and nothing here is legal advice or a guarantee of any interview outcome. Always answer truthfully and consult a licensed immigration attorney about your case.";
+  "GreenPass is an independent educational practice tool. It is not affiliated with USCIS or the U.S. government, does not provide legal advice, and cannot predict or guarantee the outcome of an immigration case. Practice questions are illustrative — actual USCIS questions vary. Always answer truthfully and consult a licensed immigration attorney about your case.";

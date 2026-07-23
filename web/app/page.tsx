@@ -2,13 +2,13 @@ import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
 
 const features = [
-  { emoji: "🎙️", title: "AI Interview Simulator", body: "A realistic USCIS officer that asks one question at a time, listens, and follows up on what you say." },
-  { emoji: "🗂️", title: "500+ Practice Questions", body: "Every category a real interview covers — relationship, employment, admissibility, and more." },
-  { emoji: "🎭", title: "Officer Personalities", body: "Choose friendly, neutral, or strict, and set the difficulty from easy to hard." },
-  { emoji: "🎙️", title: "Voice Mode", body: "The officer reads questions aloud and you answer by speaking — a true-to-life rehearsal." },
+  { emoji: "🎥", title: "Video Interview Room", body: "A private virtual room with an AI officer who speaks to you while your camera and mic are on — just like the real thing." },
+  { emoji: "🗣️", title: "Voice-to-Voice", body: "No typing. The officer asks aloud; you answer out loud. Your speech is transcribed and follow-ups adapt to what you said." },
+  { emoji: "👔", title: "Choose Your Officer", body: "Pick from professional interviewer personas, each with a voice preview, then set the mood and difficulty." },
+  { emoji: "🧪", title: "Device & System Check", body: "Camera, microphone, speaker, lighting, and connection are checked before you begin." },
   { emoji: "✅", title: "Document Checklist", body: "Know exactly what to bring, tracked and grouped so nothing is forgotten." },
   { emoji: "📈", title: "Readiness Score", body: "A single number that tells you how prepared you are — and what to drill next." },
-  { emoji: "🧭", title: "Personalized Plan", body: "After each mock interview, get feedback and a focused list of weak areas." },
+  { emoji: "🧭", title: "Feedback After, Not During", body: "The interview stays realistic; your scored report and full transcript come only when it ends." },
 ];
 
 const testimonials = [
@@ -191,30 +191,37 @@ function HeroPreview() {
         <span className="h-2.5 w-2.5 rounded-full bg-[#FEBC2E]" />
         <span className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
         <span className="ml-2 text-xs font-semibold text-ink-faint">
-          Mock Interview · Marriage-Based · Neutral officer
+          Practice interview · Marriage-Based · Officer Morgan
         </span>
       </div>
-      <div className="space-y-3 p-5">
-        <div className="max-w-[80%] rounded-2xl rounded-tl-sm bg-surface-mute px-4 py-3 text-sm">
-          Good morning. Let&apos;s begin. How did you and your spouse first
-          meet?
+      {/* Mini video-room mock */}
+      <div className="relative aspect-[16/9] overflow-hidden" style={{ background: "radial-gradient(120% 90% at 70% 20%, #1a2b46 0%, #101c31 45%, #0a1424 100%)" }}>
+        <div className="absolute -right-8 top-4 h-40 w-40 rounded-full bg-[#4F6BED] opacity-20 blur-3xl" />
+        {/* officer bust */}
+        <svg viewBox="0 0 400 220" className="absolute inset-0 h-full w-full">
+          <path d="M110 220 C 116 168, 158 148, 210 148 C 262 148, 304 168, 310 220 Z" fill="#4F6BED" fillOpacity="0.85" />
+          <rect x="196" y="120" width="28" height="36" rx="12" fill="#95A2B2" />
+          <ellipse cx="210" cy="92" rx="42" ry="48" fill="#C9D2DE" />
+          <circle cx="194" cy="90" r="4" fill="#2a3340" />
+          <circle cx="226" cy="90" r="4" fill="#2a3340" />
+          <ellipse cx="210" cy="116" rx="9" ry="4" fill="#5b3a3f" />
+        </svg>
+        {/* status pill */}
+        <div className="absolute left-1/2 top-3 -translate-x-1/2 rounded-full bg-black/40 px-3 py-1 text-[11px] font-semibold text-[#39B87E] backdrop-blur">
+          ● Listening…
         </div>
-        <div className="ml-auto max-w-[80%] rounded-2xl rounded-tr-sm bg-brand-500 px-4 py-3 text-sm text-white">
-          We met in March 2021 at my cousin&apos;s birthday party in Chicago. My
-          cousin introduced us.
+        {/* nameplate */}
+        <div className="absolute left-3 top-3 rounded-lg bg-black/35 px-2.5 py-1 backdrop-blur">
+          <div className="text-[11px] font-bold text-white">Officer Morgan</div>
         </div>
-        <div className="rounded-xl border border-brand-100 bg-brand-50/60 px-4 py-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wide text-brand-700">
-              Instant feedback
-            </span>
-            <span className="pill bg-white text-brand-700">8.6 / 10</span>
-          </div>
-          <p className="mt-1.5 text-xs text-ink-soft">
-            Confident and specific — a date and a place. Add who else was there
-            to make it even stronger.
-          </p>
+        {/* self view PiP */}
+        <div className="absolute bottom-3 right-3 aspect-video w-[30%] overflow-hidden rounded-lg border border-white/20 bg-[#0a1424]">
+          <div className="grid h-full place-items-center text-[10px] font-semibold text-white/60">You</div>
         </div>
+      </div>
+      <div className="flex items-center justify-between px-4 py-3">
+        <span className="text-xs text-ink-faint">Speak your answers — no typing.</span>
+        <span className="pill bg-brand-50 text-brand-700">Scored after the interview</span>
       </div>
     </div>
   );

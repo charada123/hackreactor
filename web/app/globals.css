@@ -47,3 +47,37 @@ body {
     @apply text-xs font-bold uppercase tracking-[0.14em] text-brand-500;
   }
 }
+
+/* ---- Video interview room animations ---- */
+@keyframes ivBreathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3.5px); }
+}
+@keyframes ivSway {
+  0%, 100% { transform: rotate(-1deg); }
+  50% { transform: rotate(1.1deg); }
+}
+@keyframes ivBlink {
+  0%, 93%, 100% { transform: scaleY(0); }
+  96% { transform: scaleY(1); }
+}
+@keyframes ivGlow {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.5; }
+}
+@keyframes ivPing {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(2.3); opacity: 0; }
+}
+@keyframes ivFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.iv-breathe { animation: ivBreathe 4.5s ease-in-out infinite; }
+.iv-sway { animation: ivSway 7s ease-in-out infinite; transform-origin: 50% 90%; }
+.iv-blink { transform-origin: center; animation: ivBlink 6s infinite; }
+.iv-blink.delay { animation-delay: 0.15s; }
+.iv-fade { animation: ivFade 0.5s ease both; }
+@media (prefers-reduced-motion: reduce) {
+  .iv-breathe, .iv-sway, .iv-blink { animation: none !important; }
+}

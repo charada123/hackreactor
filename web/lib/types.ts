@@ -47,3 +47,43 @@ export interface Category {
   emoji: string;
   blurb: string;
 }
+
+// ---- Video interview (v2) ----
+
+export type InterviewDuration = "quick" | "standard" | "full";
+
+export interface InterviewConfig extends SimulatorConfig {
+  personaId: string;
+  duration: InterviewDuration;
+}
+
+/** Visual state the officer persona can present. */
+export type OfficerState =
+  | "idle"
+  | "listening"
+  | "speaking"
+  | "thinking"
+  | "reviewing"
+  | "closing";
+
+/** Discreet live status shown in the interview room (never a chat transcript). */
+export type LiveStatus =
+  | "connecting"
+  | "speaking"
+  | "listening"
+  | "still-listening"
+  | "processing"
+  | "no-audio"
+  | "ended";
+
+/** One captured turn. Retained internally for scoring; shown only on the report. */
+export interface TranscriptEntry {
+  section: string;
+  question: string;
+  answer: string;
+  isFollowUp: boolean;
+  /** ms the applicant spent speaking their answer. */
+  spokenMs: number;
+  /** ms of silence before the applicant began answering (hesitation). */
+  hesitationMs: number;
+}
