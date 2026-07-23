@@ -69,7 +69,24 @@ export class LocalTextToSpeech implements TextToSpeechProvider {
     const en = all.filter((v) => /^en/i.test(v.lang));
     const pool = en.length ? en : all;
     if (pool.length === 0) return undefined;
-    return pool[this.order % pool.length];
+    // Rank toward the most natural voice available on this device and avoid
+    // the robotic "compact"/eSpeak ones. Then let the persona pick among the
+    // best few for variety.
+    const score = (v: SpeechSynthesisVoice): number => {
+      const n = v.name.toLowerCase();
+      let s = 0;
+      if (/google (us|uk) english/.test(n)) s += 7; // Chrome, very natural
+      if (/natural|neural|enhanced|premium/.test(n)) s += 6; // Edge/iOS enhanced
+      if (/\b(samantha|ava|allison|serena|zoe|evan|nathan|aaron|joelle|noelle|siri)\b/.test(n)) s += 4;
+      if (/\b(daniel|karen|moira|tessa|fiona|arthur|martha)\b/.test(n)) s += 2;
+      if (/en[-_]us/i.test(v.lang)) s += 2;
+      if (v.localService === false) s += 1; // network voices usually nicer
+      if (/compact|eloquence|espeak|fred|albert|zarvox|robot/.test(n)) s -= 6;
+      return s;
+    };
+    const ranked = [...pool].sort((a, b) => score(b) - score(a));
+    const top = ranked.slice(0, Math.min(3, ranked.length));
+    return top[this.order % top.length];
   }
 
   speak(text: string, opts?: { onStart?: () => void }): Promise<void> {
