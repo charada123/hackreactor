@@ -32,6 +32,30 @@ npm run dev                  # http://localhost:3000
 
 Production build: `npm run build && npm run start`.
 
+## Deploy a public URL (test on your phone)
+
+The video room needs **HTTPS** (or `localhost`) for camera, microphone, and
+speech recognition — so to try it on a phone, deploy it. Vercel is the easiest.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fcharada123%2Fhackreactor&root-directory=web&project-name=greenpass-interview&repository-name=greenpass-interview&env=ANTHROPIC_API_KEY,ANTHROPIC_MODEL&envDescription=Optional%3A%20set%20ANTHROPIC_API_KEY%20to%20enable%20the%20live%20Claude%20officer%20(otherwise%20the%20built-in%20engine%20runs))
+
+The button pre-sets the **root directory to `web`** and prompts for an optional
+`ANTHROPIC_API_KEY`. When it finishes you get an `https://…vercel.app` URL that
+works on your phone — open it, go to **/simulator**, and grant camera + mic.
+
+**Prefer to import your existing repo directly?** (most reliable for a private
+repo):
+
+1. [vercel.com/new](https://vercel.com/new) → **Import** `charada123/hackreactor`.
+2. Set **Root Directory** to `web` (this is the one setting that matters — a
+   `web/vercel.json` is included so the framework and build command auto-detect).
+3. *(Optional)* add env var `ANTHROPIC_API_KEY` to enable the live Claude officer.
+   Without it, the built-in adaptive engine runs.
+4. **Deploy.**
+
+Use **Chrome or Edge** on the phone for the best in-browser speech-recognition
+support. Netlify/Render work too — same rule: set the project root to `web`.
+
 ## What's built
 
 | Area | Status | Where |

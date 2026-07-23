@@ -1,5 +1,6 @@
 > 🌐 **GreenPass** — the AI-powered USCIS green-card interview practice **web app**
-> (Next.js + Claude) lives in [`web/`](web/). See its README to run it.
+> (Next.js + Claude; voice-to-voice video interview room) lives in [`web/`](web/).
+> See its README to run it or one-click **deploy to Vercel**.
 >
 > 📱 The **I-485 Interview Prep** mobile app (iOS + Android, Expo) lives in
 > [`interview-prep/`](interview-prep/).
