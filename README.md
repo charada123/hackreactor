@@ -1,5 +1,8 @@
-> 📱 Looking for the **I-485 Interview Prep** mobile app (iOS + Android)?
-> It lives in [`interview-prep/`](interview-prep/) — see its README to run it.
+> 🌐 **GreenPass** — the AI-powered USCIS green-card interview practice **web app**
+> (Next.js + Claude) lives in [`web/`](web/). See its README to run it.
+>
+> 📱 The **I-485 Interview Prep** mobile app (iOS + Android, Expo) lives in
+> [`interview-prep/`](interview-prep/).
 
 # Sales Rep Territory Map
 

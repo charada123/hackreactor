@@ -1,0 +1,112 @@
+// Database schema for the future server-backed version of GreenPass.
+//
+// The app currently runs entirely client-side (progress in localStorage) so it
+// works with zero setup. To move persistence server-side:
+//   1. Provision Postgres (e.g. Supabase) and set DATABASE_URL in .env.local
+//   2. `npx prisma migrate dev`
+//   3. Swap lib/store.ts reads/writes for API routes backed by these models.
+//
+// Auth is intentionally minimal here; wire it to Supabase Auth or NextAuth.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+
+  sessions    InterviewSession[]
+  checklist   ChecklistItem[]
+  timeline    TimelineEntry[]
+  bookmarks   Bookmark[]
+  streakDays  StreakDay[]
+}
+
+model InterviewSession {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interviewType String
+  mood          String
+  difficulty    String
+  questionCount Int
+  averageScore  Float
+  createdAt     DateTime @default(now())
+
+  answers Answer[]
+
+  @@index([userId, createdAt])
+}
+
+model Answer {
+  id           String           @id @default(cuid())
+  sessionId    String
+  session      InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question     String
+  answer       String
+  confidence   Int
+  naturalness  Int
+  specificity  Int
+  consistency  Int
+  completeness Int
+  overall      Int
+  redFlags     String[]
+  suggestion   String
+
+  @@index([sessionId])
+}
+
+model ChecklistItem {
+  id     String  @id @default(cuid())
+  userId String
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId String
+  done   Boolean @default(false)
+
+  @@unique([userId, itemId])
+}
+
+model TimelineEntry {
+  id     String  @id @default(cuid())
+  userId String
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stepId String
+  date   String?
+
+  @@unique([userId, stepId])
+}
+
+model Bookmark {
+  id         String @id @default(cuid())
+  userId     String
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId String
+
+  @@unique([userId, questionId])
+}
+
+model StreakDay {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  day    String // YYYY-MM-DD
+
+  @@unique([userId, day])
+}
+
+// Content managed via a future admin portal.
+model QuestionBankItem {
+  id         String  @id @default(cuid())
+  categoryId String
+  prompt     String
+  tip        String?
+  active     Boolean @default(true)
+}
