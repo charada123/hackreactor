@@ -1,0 +1,18 @@
+{
+  "name": "linkedin-content-agent",
+  "version": "1.0.0",
+  "description": "Generates and auto-posts LinkedIn content on motivation, aesthetics, relationships, business, and growth using the Claude API.",
+  "type": "module",
+  "main": "post.mjs",
+  "scripts": {
+    "generate": "node post.mjs",
+    "post": "node post.mjs --post"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.68.0"
+  },
+  "license": "ISC"
+}

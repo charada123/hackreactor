@@ -1,0 +1,60 @@
+name: LinkedIn daily post
+
+# Auto-posts one LinkedIn update per run using the Claude API.
+# Configure ANTHROPIC_API_KEY and LINKEDIN_ACCESS_TOKEN as repository secrets
+# (Settings -> Secrets and variables -> Actions). Optionally add
+# LINKEDIN_AUTHOR_URN.
+
+on:
+  schedule:
+    # 14:00 UTC every weekday (09:00 US Eastern). Adjust to taste.
+    - cron: "0 14 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Generate only, do not publish"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write # to commit the updated post history
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        working-directory: agent
+        run: npm install
+
+      - name: Generate and publish
+        working-directory: agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+          LINKEDIN_AUTHOR_URN: ${{ secrets.LINKEDIN_AUTHOR_URN }}
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            node post.mjs
+          else
+            node post.mjs --post
+          fi
+
+      - name: Commit updated post history
+        if: ${{ inputs.dry_run != true }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet agent/data/history.json; then
+            git add agent/data/history.json
+            git commit -m "chore: log LinkedIn post $(date -u +%Y-%m-%d)"
+            git push
+          fi
