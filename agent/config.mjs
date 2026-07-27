@@ -67,7 +67,7 @@ export const config = {
 
   // LinkedIn API version (YYYYMM). LinkedIn requires this header on the
   // versioned /rest endpoints. Bump it as LinkedIn releases new versions.
-  linkedinApiVersion: process.env.LINKEDIN_API_VERSION || "202409",
+  linkedinApiVersion: process.env.LINKEDIN_API_VERSION || "202606",
 
   // Post visibility: PUBLIC or CONNECTIONS.
   visibility: process.env.LINKEDIN_VISIBILITY || "PUBLIC",
