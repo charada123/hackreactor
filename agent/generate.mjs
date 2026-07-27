@@ -1,9 +1,9 @@
 // Post generation via the Claude API.
 //
-// Given a theory and the recent post history, ask Claude for one original,
-// motivational LinkedIn post that teaches the theory and turns it into a
-// practical takeaway. Structured output gives us a clean object (text +
-// hashtags) rather than free-form prose to parse.
+// Given a theory and the recent post history, ask Claude for one original
+// LinkedIn post that names and defines the theory, applies it to the author's
+// industry, and lands a motivating takeaway — in the author's voice.
+// Structured output gives us a clean object (text + hashtags).
 
 import Anthropic from "@anthropic-ai/sdk";
 import { config } from "./config.mjs";
@@ -15,12 +15,17 @@ const POST_SCHEMA = {
   properties: {
     text: {
       type: "string",
-      description: "The LinkedIn post body, ready to publish verbatim.",
+      description:
+        "The LinkedIn post body, ready to publish verbatim. Starts with a " +
+        "titled headline line. Does NOT include hashtags.",
     },
     hashtags: {
       type: "array",
       items: { type: "string" },
-      description: "3-5 relevant hashtags, each including the leading #.",
+      description:
+        "10-14 hashtags, each including the leading #, in PascalCase " +
+        "(e.g. #ServiceExcellence). Mix the concept name, the industry, and " +
+        "recurring themes.",
     },
   },
   required: ["text", "hashtags"],
@@ -29,34 +34,35 @@ const POST_SCHEMA = {
 
 function buildPrompt(theory, recentPosts) {
   const avoid = recentPosts.length
-    ? "You have recently posted the following. Do NOT repeat these openings, " +
-      "stories, framings, or takeaways — say something genuinely new:\n\n" +
+    ? "You have recently posted the following. Do NOT repeat these headlines, " +
+      "openings, examples, or closes — say something genuinely new:\n\n" +
       recentPosts
         .map((p, i) => `${i + 1}. [${p.theory || p.topic}] ${p.text}`)
         .join("\n\n")
-    : "This is your first post — set a strong, motivating tone.";
+    : "This is your first post in this run — set a strong, motivating tone.";
 
   return [
-    `Write one motivational LinkedIn post built around this idea:`,
+    `Write one LinkedIn post built around this concept:`,
     `**${theory.name}** (${theory.category}).`,
     "",
-    "Your goal: teach this theory clearly, then turn it into something the",
-    "reader feels motivated to act on today. Make a real management/business",
-    "concept feel personal and energising, not academic.",
+    "Name and define it plainly, then apply it to your industry (medical",
+    "device / medical aesthetics / high-touch service, field service, customer",
+    "experience, retention, service and operational excellence). Turn it into a",
+    "motivating, practical lesson a service or field leader can act on.",
     "",
-    "Requirements:",
-    `- Around ${config.targetWords} words. Short, punchy, scannable paragraphs.`,
-    "- Open with a hook that grabs attention — a tension, a question, a sharp",
-    "  claim. Never \"I've been thinking about...\" or \"Did you know...\".",
-    "- Explain the core of the theory in plain language — no jargon dumps. One",
-    "  crisp example or mini-story that makes it click.",
-    "- Draw out ONE motivating, practical takeaway the reader can apply to",
-    "  their work, team, or growth. This is the heart of the post.",
-    "- Name the theory (and its thinker, if notable) so people learn something.",
-    "- End on a line that lifts the reader and invites a reply — motivating,",
-    "  not a cheesy \"Agree? Comment below\" CTA.",
-    "- No emojis unless one genuinely adds meaning. No hashtags in the body.",
-    "- Plain text a real person would type. No markdown, headers, or bold.",
+    "Follow your standard post structure:",
+    "- Titled headline first line.",
+    "- Industry-framed hook that raises a tension or question.",
+    "- One line naming and defining the concept: 'This is the ... — ...'.",
+    "- Concrete examples as '•' bullets, or parallel 'If X? Then Y.' lines,",
+    "  set in real service/field situations.",
+    "- A contrast (the opposite is true too), then a few stacked one-liners.",
+    "- A 'What if ...' line that raises the reader's ambition.",
+    "- A two-line motivating parallel close.",
+    "- A closing engagement question, usually to 'your team'.",
+    "",
+    `Around ${config.targetWords} words. Plain text only — no markdown, no bold,`,
+    "no headers. Do NOT put hashtags in the body; return them separately.",
     "",
     avoid,
   ].join("\n");
@@ -67,7 +73,7 @@ export async function generatePost(theory, recentPosts = []) {
     model: config.model,
     max_tokens: 16000,
     thinking: { type: "adaptive" },
-    system: config.voice,
+    system: `${config.domain}\n\n${config.voice}`,
     output_config: { format: { type: "json_schema", schema: POST_SCHEMA } },
     messages: [{ role: "user", content: buildPrompt(theory, recentPosts) }],
   });
