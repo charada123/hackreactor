@@ -1,8 +1,9 @@
-// Entry point: pick a topic, generate a post, and (optionally) publish it.
+// Entry point: pick a theory, generate a motivational post about it, and
+// (optionally) publish it.
 //
-//   node post.mjs            # dry run — generate and print, do NOT publish
-//   node post.mjs --post     # generate AND publish to LinkedIn
-//   node post.mjs --topic business
+//   node post.mjs                    # dry run — generate and print, do NOT publish
+//   node post.mjs --post             # generate AND publish to LinkedIn
+//   node post.mjs --theory maslow    # force a theory (substring match)
 //
 // The dry-run default is a safety net: you never accidentally publish while
 // testing. The scheduled GitHub Action passes --post explicitly.
@@ -13,40 +14,42 @@ import { resolveAuthorUrn, publishPost } from "./linkedin.mjs";
 import { loadHistory, appendHistory, recent } from "./history.mjs";
 
 function parseArgs(argv) {
-  const args = { post: false, topic: null };
+  const args = { post: false, theory: null };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === "--post") args.post = true;
-    else if (argv[i] === "--topic") args.topic = argv[++i];
+    else if (argv[i] === "--theory") args.theory = argv[++i];
   }
   return args;
 }
 
-// Choose the next topic. In "rotate" mode we look at the last posted topic and
-// advance to the next one in the list; in "random" mode we pick at random.
-function chooseTopic(history, explicitKey) {
-  if (explicitKey) {
-    const t = config.topics.find((t) => t.key === explicitKey);
-    if (!t) throw new Error(`Unknown topic "${explicitKey}".`);
+// Choose the next theory. In "rotate" mode we look at the last posted theory
+// and advance to the next one in the list; in "random" mode we pick at random.
+// An explicit --theory value matches by case-insensitive substring.
+function chooseTheory(history, explicitQuery) {
+  if (explicitQuery) {
+    const q = explicitQuery.toLowerCase();
+    const t = config.theories.find((t) => t.name.toLowerCase().includes(q));
+    if (!t) throw new Error(`No theory matches "${explicitQuery}".`);
     return t;
   }
   if (config.selection === "random") {
-    return config.topics[Math.floor(Math.random() * config.topics.length)];
+    return config.theories[Math.floor(Math.random() * config.theories.length)];
   }
   // rotate
-  const last = history.at(-1)?.topic;
-  const lastIdx = config.topics.findIndex((t) => t.key === last);
-  return config.topics[(lastIdx + 1) % config.topics.length];
+  const last = history.at(-1)?.theory;
+  const lastIdx = config.theories.findIndex((t) => t.name === last);
+  return config.theories[(lastIdx + 1) % config.theories.length];
 }
 
 async function main() {
   const args = parseArgs(process.argv);
   const history = await loadHistory();
-  const topic = chooseTopic(history, args.topic);
+  const theory = chooseTheory(history, args.theory);
 
-  console.log(`Topic: ${topic.label} (${topic.key})`);
+  console.log(`Theory: ${theory.name} (${theory.category})`);
   console.log("Generating post with Claude...\n");
 
-  const post = await generatePost(topic, recent(history, config.historyContext));
+  const post = await generatePost(theory, recent(history, config.historyContext));
 
   console.log("─".repeat(60));
   console.log(post.commentary);
@@ -70,7 +73,8 @@ async function main() {
 
   await appendHistory({
     postedAt: new Date().toISOString(),
-    topic: topic.key,
+    theory: theory.name,
+    category: theory.category,
     text: post.text,
     hashtags: post.hashtags,
     urn: postUrn,

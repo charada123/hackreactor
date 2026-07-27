@@ -1,8 +1,8 @@
 # LinkedIn Content Agent
 
-A standalone agent that generates and auto-posts original LinkedIn updates on
-**motivation, aesthetics, improving relationships, business, and personal
-growth** using the Claude API.
+A standalone agent that generates and auto-posts **motivational** LinkedIn
+updates grounded in real management, motivation, leadership, strategy, and
+business **theories** (70 of them) using the Claude API.
 
 The project lives in [`agent/`](./agent) — see
 [`agent/README.md`](./agent/README.md) for setup, usage, and scheduled

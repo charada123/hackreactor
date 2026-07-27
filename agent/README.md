@@ -1,27 +1,32 @@
 # LinkedIn Content Agent
 
-Generates original LinkedIn posts about **motivation, aesthetics, improving
-relationships, business, and personal growth** with the Claude API, and
-auto-publishes them on a schedule.
+Generates original, **motivational** LinkedIn posts grounded in real
+management, motivation, leadership, strategy, marketing, and finance **theories**
+(70 of them) with the Claude API, and auto-publishes them on a schedule.
+
+Each post teaches one real theory — Maslow's Hierarchy, Blue Ocean Strategy,
+Servant Leadership, Prospect Theory, and so on — and turns it into a practical,
+motivating takeaway.
 
 - **Writes** each post fresh with Claude (Opus 5) in a voice you control.
-- **Rotates** through topics and reads its own post history so it never repeats
-  itself.
+- **Rotates** through the theory library and reads its own post history so it
+  never repeats itself.
 - **Publishes** to LinkedIn via the official Posts API.
 - **Runs on a schedule** via GitHub Actions (or any cron), or on demand.
 
 ## How it works
 
 ```
-config.mjs     topics, voice, length, LinkedIn settings
-generate.mjs   asks Claude for one post (structured output: text + hashtags)
+config.mjs     the theory library, voice, length, LinkedIn settings
+generate.mjs   asks Claude for one motivational post about a theory
 linkedin.mjs   publishes to https://api.linkedin.com/rest/posts
 history.mjs    logs every post to data/history.json (audit + dedupe context)
-post.mjs       ties it together: pick topic -> generate -> publish -> log
+post.mjs       ties it together: pick theory -> generate -> publish -> log
 ```
 
-Each run picks the next topic in rotation, shows Claude the last several posts
-so it stays fresh, generates a post, and (with `--post`) publishes it.
+Each run picks the next theory in rotation, shows Claude the last several posts
+so it stays fresh, generates a motivational post that teaches and applies it,
+and (with `--post`) publishes it.
 
 ## Setup
 
@@ -47,14 +52,15 @@ node post.mjs
 # Publish for real
 node post.mjs --post
 
-# Force a specific topic
-node post.mjs --topic business
-node post.mjs --topic aesthetics --post
+# Force a specific theory (case-insensitive substring match)
+node post.mjs --theory maslow
+node post.mjs --theory "blue ocean" --post
 ```
 
-Topics: `motivation`, `aesthetics`, `relationships`, `business`, `growth`.
-Edit the `topics` array in `config.mjs` to change them, or the `voice` string
-to change how the posts sound.
+The theory library (70 theories across Management, Motivation, Leadership,
+Strategy, Marketing, Organization, Entrepreneurship, and Finance) lives in the
+`theories` array in `config.mjs` — add, remove, or reorder them there, or edit
+the `voice` string to change how the posts sound.
 
 ## Scheduled auto-posting (GitHub Actions)
 
