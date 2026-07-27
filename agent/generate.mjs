@@ -61,11 +61,24 @@ function buildPrompt(theory, recentPosts) {
     "- A two-line motivating parallel close.",
     "- A closing engagement question, usually to 'your team'.",
     "",
-    `Around ${config.targetWords} words. Plain text only — no markdown, no bold,`,
+    `Around ${config.targetWords} words. Plain text only: no markdown, no bold,`,
     "no headers. Do NOT put hashtags in the body; return them separately.",
+    "Do NOT use em dashes or en dashes anywhere. Avoid AI-sounding filler.",
     "",
     avoid,
   ].join("\n");
+}
+
+// Belt-and-suspenders: strip any em/en/bar/figure dashes the model produced,
+// replacing them with natural punctuation. Plain hyphens (compound words) are
+// left untouched.
+function stripDashes(text) {
+  return text
+    .replace(/\s*[—–―‒]\s*/g, ", ") // dash (spaced or not) -> comma
+    .replace(/\s+,/g, ",") // tidy " ," -> ","
+    .replace(/,\s*,/g, ",") // collapse ", ,"
+    .replace(/,\s*([.!?])/g, "$1") // ", ." -> "."
+    .replace(/[ \t]{2,}/g, " "); // collapse runs of spaces
 }
 
 export async function generatePost(theory, recentPosts = []) {
@@ -86,13 +99,14 @@ export async function generatePost(theory, recentPosts = []) {
   if (!block) throw new Error("No text returned from Claude.");
 
   const parsed = JSON.parse(block.text);
+  const text = stripDashes(parsed.text);
   const hashtags = (parsed.hashtags || []).join(" ").trim();
 
   // Compose the final published text: body, a blank line, then hashtags.
-  const commentary = hashtags ? `${parsed.text}\n\n${hashtags}` : parsed.text;
+  const commentary = hashtags ? `${text}\n\n${hashtags}` : text;
 
   return {
-    text: parsed.text,
+    text,
     hashtags: parsed.hashtags || [],
     commentary,
     usage: response.usage,
