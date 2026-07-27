@@ -15,6 +15,10 @@ on:
         description: "Generate only, do not publish"
         type: boolean
         default: false
+      delete_urn:
+        description: "Delete a post by URN (e.g. urn:li:share:123). Skips posting."
+        type: string
+        default: ""
 
 permissions:
   contents: write # to commit the updated post history
@@ -41,15 +45,19 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
           LINKEDIN_AUTHOR_URN: ${{ secrets.LINKEDIN_AUTHOR_URN }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          DELETE_URN: ${{ inputs.delete_urn }}
         run: |
-          if [ "${{ inputs.dry_run }}" = "true" ]; then
+          if [ -n "$DELETE_URN" ]; then
+            node post.mjs --delete "$DELETE_URN"
+          elif [ "$DRY_RUN" = "true" ]; then
             node post.mjs
           else
             node post.mjs --post
           fi
 
       - name: Commit updated post history
-        if: ${{ inputs.dry_run != true }}
+        if: ${{ inputs.dry_run != true && inputs.delete_urn == '' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

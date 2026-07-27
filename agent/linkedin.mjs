@@ -70,3 +70,17 @@ export async function publishPost(token, authorUrn, commentary) {
     "(unknown urn)"
   );
 }
+
+// Delete a post you authored, by its URN (e.g. urn:li:share:123...).
+export async function deletePost(token, postUrn) {
+  const res = await fetch(
+    `${API_BASE}/rest/posts/${encodeURIComponent(postUrn)}`,
+    { method: "DELETE", headers: authHeaders(token) },
+  );
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`LinkedIn delete failed (${res.status}): ${body}`);
+  }
+  return true;
+}

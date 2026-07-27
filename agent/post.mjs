@@ -10,14 +10,15 @@
 
 import { config } from "./config.mjs";
 import { generatePost } from "./generate.mjs";
-import { resolveAuthorUrn, publishPost } from "./linkedin.mjs";
+import { resolveAuthorUrn, publishPost, deletePost } from "./linkedin.mjs";
 import { loadHistory, appendHistory, recent } from "./history.mjs";
 
 function parseArgs(argv) {
-  const args = { post: false, theory: null };
+  const args = { post: false, theory: null, delete: null };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === "--post") args.post = true;
     else if (argv[i] === "--theory") args.theory = argv[++i];
+    else if (argv[i] === "--delete") args.delete = argv[++i];
   }
   return args;
 }
@@ -43,6 +44,17 @@ function chooseTheory(history, explicitQuery) {
 
 async function main() {
   const args = parseArgs(process.argv);
+
+  // Delete mode: remove a previously published post by URN, then exit.
+  if (args.delete) {
+    const token = process.env.LINKEDIN_ACCESS_TOKEN;
+    if (!token) throw new Error("LINKEDIN_ACCESS_TOKEN is not set.");
+    console.log(`Deleting ${args.delete}...`);
+    await deletePost(token, args.delete);
+    console.log("Deleted.");
+    return;
+  }
+
   const history = await loadHistory();
   const theory = chooseTheory(history, args.theory);
 
