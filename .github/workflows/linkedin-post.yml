@@ -19,6 +19,10 @@ on:
         description: "Delete a post by URN (e.g. urn:li:share:123). Skips posting."
         type: string
         default: ""
+      force_ad:
+        description: "Publish an ad now (ignores cadence; not logged to history)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write # to commit the updated post history
@@ -47,9 +51,12 @@ jobs:
           LINKEDIN_AUTHOR_URN: ${{ secrets.LINKEDIN_AUTHOR_URN }}
           DRY_RUN: ${{ inputs.dry_run }}
           DELETE_URN: ${{ inputs.delete_urn }}
+          FORCE_AD: ${{ inputs.force_ad }}
         run: |
           if [ -n "$DELETE_URN" ]; then
             node post.mjs --delete "$DELETE_URN"
+          elif [ "$FORCE_AD" = "true" ]; then
+            node post.mjs --ad --post
           elif [ "$DRY_RUN" = "true" ]; then
             node post.mjs
           else
@@ -57,7 +64,7 @@ jobs:
           fi
 
       - name: Commit updated post history
-        if: ${{ inputs.dry_run != true && inputs.delete_urn == '' }}
+        if: ${{ inputs.dry_run != true && inputs.delete_urn == '' && inputs.force_ad != true }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
