@@ -14,13 +14,41 @@ import { resolveAuthorUrn, publishPost, deletePost } from "./linkedin.mjs";
 import { loadHistory, appendHistory, recent } from "./history.mjs";
 
 function parseArgs(argv) {
-  const args = { post: false, theory: null, delete: null };
+  const args = { post: false, theory: null, delete: null, ad: false };
   for (let i = 2; i < argv.length; i++) {
     if (argv[i] === "--post") args.post = true;
     else if (argv[i] === "--theory") args.theory = argv[++i];
     else if (argv[i] === "--delete") args.delete = argv[++i];
+    else if (argv[i] === "--ad") args.ad = true;
   }
   return args;
+}
+
+// Should this run be an ad rather than a concept post? We aim for one ad per
+// `theoriesPerAd` concept posts, counting only posts made since ads were
+// introduced (adBaselineNonAd) so the curated concept series runs first.
+function shouldPostAd(history) {
+  if (!config.ads?.length) return false;
+  const ads = history.filter((h) => h.type === "ad").length;
+  const nonAds = history.length - ads;
+  const newConcepts = nonAds - config.adBaselineNonAd;
+  return newConcepts >= (ads + 1) * config.theoriesPerAd;
+}
+
+// Pick the next ad in rotation and assemble its published text (body, then the
+// supporting article, then hashtags).
+function chooseAd(history) {
+  const ads = history.filter((h) => h.type === "ad").length;
+  const ad = config.ads[ads % config.ads.length];
+  const tags = (ad.hashtags || []).join(" ");
+  const commentary = [
+    ad.text,
+    `${ad.article.title}\n${ad.article.url}`,
+    tags,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  return { ad, commentary };
 }
 
 // Choose the next theory. In "rotate" mode we look at the last posted theory
@@ -56,6 +84,39 @@ async function main() {
   }
 
   const history = await loadHistory();
+
+  // Ad path: an explicit --ad, or the cadence says it's an ad's turn (unless a
+  // specific --theory was requested, which always produces a concept post).
+  if (args.ad || (!args.theory && shouldPostAd(history))) {
+    const { ad, commentary } = chooseAd(history);
+    console.log(`Ad: ${ad.id}`);
+    console.log("─".repeat(60));
+    console.log(commentary);
+    console.log("─".repeat(60));
+
+    if (!args.post) {
+      console.log("\nDry run — not published. Re-run with --post to publish.");
+      return;
+    }
+
+    const token = process.env.LINKEDIN_ACCESS_TOKEN;
+    if (!token) throw new Error("LINKEDIN_ACCESS_TOKEN is not set.");
+    const authorUrn = await resolveAuthorUrn(token);
+    console.log(`\nPublishing ad as ${authorUrn}...`);
+    const postUrn = await publishPost(token, authorUrn, commentary);
+    console.log(`Published: ${postUrn}`);
+
+    await appendHistory({
+      postedAt: new Date().toISOString(),
+      type: "ad",
+      ad: ad.id,
+      article: ad.article.url,
+      urn: postUrn,
+    });
+    console.log("Logged to data/history.json.");
+    return;
+  }
+
   const theory = chooseTheory(history, args.theory);
 
   console.log(`Theory: ${theory.name} (${theory.category})`);
@@ -85,6 +146,7 @@ async function main() {
 
   await appendHistory({
     postedAt: new Date().toISOString(),
+    type: "theory",
     theory: theory.name,
     category: theory.category,
     text: post.text,

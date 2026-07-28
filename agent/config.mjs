@@ -196,6 +196,113 @@ export const config = {
     { name: "Scientific Management Theory (Frederick Taylor)", category: "Management" },
   ],
 
+  // Promotional posts about AI agents in the workplace, rotated in between the
+  // concept posts (see ad cadence below). These are fixed, approved copy. Each
+  // carries a verified article from a mainstream source; the runner appends the
+  // link and hashtags when publishing.
+  ads: [
+    {
+      id: "shift",
+      text: `AI Agents Are Quietly Rewriting the Cost of Doing Business
+
+A few years ago, AI could answer a question. Now it can do the job.
+
+The change is that agents don't just chat. They take an outcome and run it end to end: pull the data, draft the report, update the CRM, send the follow-up, and flag what needs a human.
+
+Here is what that looks like in real terms. The weekly reporting a coordinator used to spend most of a day on now runs in minutes. Invoice follow-ups that slipped through the cracks get sent on time, every time. Inbox triage happens before anyone sits down.
+
+The savings are not just headcount. It is the hours your best people get back to spend on customers instead of copy-paste.
+
+The teams pulling ahead are not the ones with the most staff. They are the ones who stopped making people do work a machine can do.
+
+If your company is looking to save money and drive efficiency, message me. Let's talk about building a small team of AI agents to take the repetitive work off your people's plates.
+
+What is the one task your team dreads every week?`,
+      article: {
+        title: "McKinsey: The economic potential of generative AI",
+        url: "https://www.mckinsey.com/capabilities/tech-and-ai/our-insights/the-economic-potential-of-generative-ai-the-next-productivity-frontier",
+      },
+      hashtags: ["#AIAgents", "#Automation", "#Efficiency", "#FutureOfWork", "#Productivity", "#OperationalExcellence", "#CostSavings", "#DigitalTransformation"],
+    },
+    {
+      id: "proof",
+      text: `Here Is What an AI Agent Handled for a Team Last Month
+
+People picture AI as a chatbot. The reality is closer to a tireless coordinator who works nights and weekends.
+
+In one month, a single agent can:
+• Draft and format the weekly reports, ready for review by 7am Monday.
+• Chase every open invoice and log the responses.
+• Keep the CRM clean so nobody sells to a lapsed account.
+• Answer the same twelve customer questions your team answers a hundred times a week.
+
+None of that is glamorous. All of it costs you real money when a person does it.
+
+An agent does not call in sick, does not forget the follow-up, and does not need the task explained twice.
+
+Your people did not train for years to copy numbers between spreadsheets. Give that work to an agent and give them back the work only a human can do.
+
+If your company is looking to save money and drive efficiency, reach out. I help teams build a small crew of AI agents to automate the repetitive work.
+
+Which of those four would free up your team the most?`,
+      article: {
+        title: "Harvard Business Review: Agentic AI Is Already Changing the Workforce",
+        url: "https://hbr.org/2025/05/agentic-ai-is-already-changing-the-workforce",
+      },
+      hashtags: ["#AIAgents", "#Automation", "#WorkplaceEfficiency", "#Productivity", "#SmallBusiness", "#Operations", "#CostReduction", "#FutureOfWork"],
+    },
+    {
+      id: "objection",
+      text: `AI Agents Are Not Here to Replace Your Team. They Are Here to Give Them Their Time Back.
+
+The fear is that automation means fewer people. In practice, it means your people stop drowning in busywork.
+
+Think about where your team's hours actually go. Data entry. Status updates. Following up on the follow-up. Rebuilding the same report every week. None of it is why you hired them.
+
+An AI agent takes that layer off their plate. The coordinator becomes a problem solver. The rep spends the extra hour with a customer instead of updating a field. The manager sees the numbers without chasing them.
+
+The cost of that busywork is easy to miss because it is spread across everyone. Add it up across a year and it is a full salary hiding in plain sight.
+
+You do not need a bigger team. You need your current team pointed at work that matters.
+
+If your company is looking to save money and drive efficiency, let's connect. I build small teams of AI agents that quietly handle the repetitive work so your people can do theirs.
+
+Where would an extra five hours a week go on your team?`,
+      article: {
+        title: "Microsoft Work Trend Index: Agents, human agency, and the opportunity for every organization",
+        url: "https://www.microsoft.com/en-us/worklab/work-trend-index/agents-human-agency-and-the-opportunity-for-every-organization",
+      },
+      hashtags: ["#AIAgents", "#Automation", "#Leadership", "#Efficiency", "#FutureOfWork", "#EmployeeExperience", "#Productivity", "#Operations"],
+    },
+    {
+      id: "competitors",
+      text: `Your Competitors Are Automating the Boring Work. Are You?
+
+The gap between companies is no longer who has the biggest team. It is who makes their team the most effective.
+
+AI agents now handle the repetitive tasks that quietly eat your margin: reporting, follow-ups, data cleanup, scheduling, first-line customer questions. They run around the clock, they do not miss, and they cost a fraction of the hours they replace.
+
+The result is simple. Lower cost per task, faster turnaround, and a team focused on the work that actually grows the business.
+
+This is not the future. It is happening in workplaces right now, and the ones who move first are already pulling ahead.
+
+If your company is looking to save money and drive efficiency, contact me. I help businesses build a small team of AI agents to automate the busywork and free their people to do more.
+
+What would you automate first if you could?`,
+      article: {
+        title: "World Economic Forum: The Future of Jobs Report 2025",
+        url: "https://www.weforum.org/publications/the-future-of-jobs-report-2025/digest/",
+      },
+      hashtags: ["#AIAgents", "#Automation", "#Efficiency", "#CostSavings", "#FutureOfWork", "#Productivity", "#DigitalTransformation", "#Business"],
+    },
+  ],
+
+  // Ad cadence: one ad per this many concept posts (2 => an ad every 3rd post).
+  theoriesPerAd: Number(process.env.THEORIES_PER_AD || 2),
+  // Non-ad posts already made before ads were introduced, so the curated
+  // concept series still runs first before ads start interleaving.
+  adBaselineNonAd: Number(process.env.AD_BASELINE_NONAD || 2),
+
   // How the theory is chosen each run: "rotate" walks the list in order (using
   // the post history), "random" picks one at random.
   selection: process.env.TOPIC_SELECTION || "rotate",
