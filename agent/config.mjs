@@ -203,6 +203,7 @@ export const config = {
   ads: [
     {
       id: "shift",
+      includeLink: true,
       text: `AI Agents Are Quietly Rewriting the Cost of Doing Business
 
 A few years ago, AI could answer a question. Now it can do the job.
@@ -226,6 +227,7 @@ What is the one task your team dreads every week?`,
     },
     {
       id: "proof",
+      includeLink: false,
       text: `Here Is What an AI Agent Handled for a Team Last Month
 
 People picture AI as a chatbot. The reality is closer to a tireless coordinator who works nights and weekends.
@@ -253,6 +255,7 @@ Which of those four would free up your team the most?`,
     },
     {
       id: "objection",
+      includeLink: true,
       text: `AI Agents Are Not Here to Replace Your Team. They Are Here to Give Them Their Time Back.
 
 The fear is that automation means fewer people. In practice, it means your people stop drowning in busywork.
@@ -276,6 +279,7 @@ Where would an extra five hours a week go on your team?`,
     },
     {
       id: "competitors",
+      includeLink: false,
       text: `Your Competitors Are Automating the Boring Work. Are You?
 
 The gap between companies is no longer who has the biggest team. It is who makes their team the most effective.

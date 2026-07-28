@@ -41,12 +41,14 @@ function chooseAd(history) {
   const ads = history.filter((h) => h.type === "ad").length;
   const ad = config.ads[ads % config.ads.length];
   const tags = (ad.hashtags || []).join(" ");
-  // Source link in the body. (LinkedIn's comment API needs partner-level
-  // "Community Management" access we don't have, so the first-comment approach
-  // returns 403.) Placed after the post, before the hashtags.
-  const commentary = [ad.text, `${ad.article.title}\n${ad.article.url}`, tags]
-    .filter(Boolean)
-    .join("\n\n");
+  // Only ads with includeLink carry a source link (in the body, since
+  // LinkedIn's comment API needs partner access we don't have). Others go
+  // link-free so the feed isn't citing a study on every ad.
+  const link =
+    ad.includeLink && ad.article
+      ? `${ad.article.title}\n${ad.article.url}`
+      : null;
+  const commentary = [ad.text, link, tags].filter(Boolean).join("\n\n");
   return { ad, commentary };
 }
 
