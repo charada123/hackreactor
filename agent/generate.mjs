@@ -44,6 +44,7 @@ function buildPrompt(theory, recentPosts) {
   return [
     `Write one LinkedIn post built around this concept:`,
     `**${theory.name}** (${theory.category}).`,
+    theory.angle ? `Angle to take: ${theory.angle}` : "",
     "",
     "Name and define it plainly, then apply it to your industry (medical",
     "device / medical aesthetics / high-touch service, field service, customer",

@@ -62,8 +62,51 @@ export const config = {
   // that explains it and turns it into a practical takeaway. Grouped by the
   // category, which also drives the framing and hashtags.
   theories: [
+    // Concept Series (curated — runs first). Behavioral and service concepts
+    // applied to medical device / aesthetics field service. Each carries an
+    // `angle` that steers the post toward the approved take.
+    { name: "The Peak-End Rule", category: "Customer Experience",
+      angle: "Clients remember the best moment and the goodbye, not the average. The last five minutes of a service call matter most." },
+    { name: "The Service Recovery Paradox", category: "Customer Experience",
+      angle: "A complaint handled brilliantly builds more loyalty than a flawless record. Your worst service days are your best retention chances." },
+    { name: "Goodhart's Law", category: "Operational Excellence",
+      angle: "When first-time-fix becomes a target, techs chase the number instead of the outcome. The metric stops telling the truth." },
+    { name: "The Trust Equation", category: "Customer Relationships",
+      angle: "Credibility plus reliability plus intimacy, divided by self-orientation. The rep who pushes the sale least often wins the account." },
+    { name: "The Zeigarnik Effect", category: "Service Operations",
+      angle: "An open ticket nags a clinic more than the repair itself. Closing the loop fast is retention, not admin." },
+    { name: "Loss Aversion", category: "Behavioral Economics",
+      angle: "Clinics fear downtime more than they crave new features. Sell uptime and protection, not just upgrades." },
+    { name: "The Endowment Effect", category: "Behavioral Economics",
+      angle: "Providers over-value the device and workflow they trained on. Use it to deepen loyalty, and respect it when introducing change." },
+    { name: "Diffusion of Innovation", category: "Strategy",
+      angle: "Every clinic adopts a new device differently. Early adopters and laggards need different support." },
+    { name: "The IKEA Effect", category: "Customer Experience",
+      angle: "People value what they help build. Involve providers in shaping their own workflow and they defend it." },
+    { name: "Parkinson's Law", category: "Operations",
+      angle: "Work expands to fill the time you give it. An install with no time box drifts; a tight one focuses." },
+    { name: "The Pratfall Effect", category: "Trust and Communication",
+      angle: "Admitting the one thing you cannot fix today builds more trust than pretending everything is fine." },
+    { name: "The Dunning-Kruger Curve", category: "Training and Development",
+      angle: "The most dangerous moment in provider training is right after they feel confident, before they are competent." },
+    { name: "Chesterton's Fence", category: "Leadership and Process",
+      angle: "Before you change a service process, learn why it exists. The annoying step may be load-bearing." },
+    { name: "The Flywheel Effect", category: "Retention and Strategy",
+      angle: "Retention compounds. One saved account funds the effort that saves the next." },
+    { name: "Social Proof", category: "Marketing",
+      angle: "One reference clinic outsells any spec sheet. Buyers trust peers over pitches." },
+    { name: "The Reciprocity Principle", category: "Customer Relationships",
+      angle: "The small unbilled favor creates an obligation that quietly shows up at renewal." },
+    { name: "The Sunk Cost Fallacy", category: "Behavioral Economics",
+      angle: "Clinics keep a device that no longer serves them because of what they already spent. Name it to move them forward." },
+    { name: "The Availability Heuristic", category: "Brand and Customer Experience",
+      angle: "Your last bad visit defines your whole brand in the customer's mind, no matter your averages." },
+    { name: "The Kano Model", category: "Customer Experience",
+      angle: "Some things delight a clinic, some are simply expected. Know the difference before you invest." },
+    { name: "The Pygmalion Effect", category: "Leadership and Motivation",
+      angle: "Providers and techs rise to the confidence you show them. Expectations shape performance." },
+
     // Management
-    { name: "Scientific Management Theory (Frederick Taylor)", category: "Management" },
     { name: "Administrative Management Theory (Henri Fayol)", category: "Management" },
     { name: "Bureaucratic Management Theory (Max Weber)", category: "Management" },
     { name: "Human Relations Theory (Elton Mayo)", category: "Management" },
@@ -147,6 +190,10 @@ export const config = {
     { name: "Principal-Agent Theory", category: "Finance" },
     { name: "Behavioral Finance Theory", category: "Finance" },
     { name: "Shareholder Value Theory", category: "Finance" },
+
+    // Already published once. Placed last so the curated concept series above
+    // runs first (rotation picks the entry after the last-posted one).
+    { name: "Scientific Management Theory (Frederick Taylor)", category: "Management" },
   ],
 
   // How the theory is chosen each run: "rotate" walks the list in order (using
