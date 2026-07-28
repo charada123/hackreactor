@@ -84,3 +84,26 @@ export async function deletePost(token, postUrn) {
   }
   return true;
 }
+
+// Add a comment to a post (e.g. a source link in the first comment, which
+// tends to get better reach than an outbound link in the post body).
+export async function commentOnPost(token, authorUrn, postUrn, text) {
+  const res = await fetch(
+    `${API_BASE}/rest/socialActions/${encodeURIComponent(postUrn)}/comments`,
+    {
+      method: "POST",
+      headers: authHeaders(token),
+      body: JSON.stringify({
+        actor: authorUrn,
+        object: postUrn,
+        message: { text },
+      }),
+    },
+  );
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`LinkedIn comment failed (${res.status}): ${body}`);
+  }
+  return true;
+}

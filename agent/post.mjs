@@ -10,7 +10,12 @@
 
 import { config } from "./config.mjs";
 import { generatePost } from "./generate.mjs";
-import { resolveAuthorUrn, publishPost, deletePost } from "./linkedin.mjs";
+import {
+  resolveAuthorUrn,
+  publishPost,
+  deletePost,
+  commentOnPost,
+} from "./linkedin.mjs";
 import { loadHistory, appendHistory, recent } from "./history.mjs";
 
 function parseArgs(argv) {
@@ -41,13 +46,8 @@ function chooseAd(history) {
   const ads = history.filter((h) => h.type === "ad").length;
   const ad = config.ads[ads % config.ads.length];
   const tags = (ad.hashtags || []).join(" ");
-  const commentary = [
-    ad.text,
-    `${ad.article.title}\n${ad.article.url}`,
-    tags,
-  ]
-    .filter(Boolean)
-    .join("\n\n");
+  // The supporting article link goes in the first comment, not the body.
+  const commentary = [ad.text, tags].filter(Boolean).join("\n\n");
   return { ad, commentary };
 }
 
@@ -106,11 +106,28 @@ async function main() {
     const postUrn = await publishPost(token, authorUrn, commentary);
     console.log(`Published: ${postUrn}`);
 
+    // Put the source link in the first comment (better reach than a body link).
+    // A comment failure shouldn't undo the published post, so it only warns.
+    let commented = false;
+    try {
+      await commentOnPost(
+        token,
+        authorUrn,
+        postUrn,
+        `More on this: ${ad.article.title}\n${ad.article.url}`,
+      );
+      commented = true;
+      console.log("Added source link as first comment.");
+    } catch (err) {
+      console.warn("Warning: could not add source comment:", err.message);
+    }
+
     await appendHistory({
       postedAt: new Date().toISOString(),
       type: "ad",
       ad: ad.id,
       article: ad.article.url,
+      commented,
       urn: postUrn,
     });
     console.log("Logged to data/history.json.");
