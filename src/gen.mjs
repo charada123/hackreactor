@@ -111,10 +111,19 @@ const html = `<title>Sales Rep Territory Map</title>
   .mapctl button{font:inherit;font-size:12px;font-weight:600;color:var(--muted);background:var(--panel);
     border:1px solid var(--line-strong);border-radius:9px;padding:6px 11px;cursor:pointer;box-shadow:var(--shadow);}
   .mapctl button:hover{color:var(--ink);border-color:var(--accent);}
+  .mapctl button[aria-pressed="false"]{opacity:.5;}
   #vp{transition:transform .55s cubic-bezier(.22,.61,.36,1);transform-origin:0 0;}
   path.state{fill:var(--land);stroke:none;}
   path.borders{fill:none;stroke:var(--land-line);stroke-width:.7;stroke-linejoin:round;vector-effect:non-scaling-stroke;}
   path.nation{fill:none;stroke:var(--line-strong);stroke-width:1;vector-effect:non-scaling-stroke;}
+
+  /* Sales territories */
+  .tfill{fill-opacity:.22;stroke:none;pointer-events:none;}
+  .tborder{fill:none;stroke:var(--ink);stroke-opacity:.34;stroke-width:1.4;vector-effect:non-scaling-stroke;stroke-linejoin:round;pointer-events:none;}
+  .tlabel{fill:var(--ink);font:750 11px var(--sans);text-anchor:middle;dominant-baseline:central;pointer-events:none;
+    paint-order:stroke;stroke:var(--panel);stroke-width:3.2px;stroke-linejoin:round;opacity:.92;}
+  .pzone{fill:none;stroke:var(--prospect);stroke-width:1.7;stroke-dasharray:5 4;vector-effect:non-scaling-stroke;
+    stroke-linejoin:round;pointer-events:none;opacity:.85;}
 
   .pin{cursor:pointer;}
   .pin .halo{opacity:0;transform-box:fill-box;transform-origin:center;}
@@ -179,12 +188,25 @@ const html = `<title>Sales Rep Territory Map</title>
     </aside>
 
     <section class="panel mapwrap" id="mapwrap">
-      <div class="mapctl"><button id="reset">Reset view</button></div>
-      <svg viewBox="0 0 ${d.W} ${d.H}" role="img" aria-label="United States map with sales rep locations">
+      <div class="mapctl">
+        <button id="terrToggle" aria-pressed="true">Territories</button>
+        <button id="reset">Reset view</button>
+      </div>
+      <svg viewBox="0 0 ${d.W} ${d.H}" role="img" aria-label="United States map with sales rep locations and territories">
         <g id="vp">
           <path class="state" d="${d.statePaths}"></path>
+          <g id="terr">
+            ${d.territories.map(t => `<path class="tfill" d="${t.d}" fill="${t.color}"></path>`).join('')}
+            <path class="tborder" d="${d.terrBorderPath}"></path>
+          </g>
           <path class="borders" d="${d.borderPath}"></path>
           <path class="nation" d="${d.nationPath}"></path>
+          <g id="pzones">
+            ${d.prospectZones.map(z => `<path class="pzone" d="${z.d}"></path>`).join('')}
+          </g>
+          <g id="tlabels">
+            ${d.terrLabels.map(l => `<text class="tlabel" x="${l.x}" y="${l.y}">${l.name}</text>`).join('')}
+          </g>
           <g id="pins"></g>
         </g>
       </svg>
@@ -193,7 +215,7 @@ const html = `<title>Sales Rep Territory Map</title>
   </div>
 
   <footer>
-    <span>Color-coded: <b style="color:var(--direct)">direct rep</b>, <b style="color:var(--field)">indirect</b>, <b style="color:var(--trainer)">trainer</b>, <b style="color:var(--team)">team</b>, <b style="color:var(--prospect)">prospect</b> (recruiting target, hollow pin).</span>
+    <span>Pins: <b style="color:var(--direct)">direct rep</b>, <b style="color:var(--field)">indirect</b>, <b style="color:var(--trainer)">trainer</b>, <b style="color:var(--team)">team</b>, <b style="color:var(--prospect)">prospect</b>. Shaded regions = each rep's sales territory; <b style="color:var(--prospect)">dashed</b> = prospect target zones.</span>
     <button class="theme" id="themeBtn">Toggle theme</button>
   </footer>
 </div>
@@ -315,6 +337,20 @@ function updateStats(){
   document.getElementById('stateCount').textContent = new Set(v.map(r=>stateOf(r.city))).size;
 }
 
+// --- territory layer (show for Sales / Sales+Trainers; hide for Trainers) ---
+let terrOn = true;
+function updateTerr(){
+  const inSalesView = activeView!=='trainer';
+  const show = terrOn && inSalesView;
+  ['terr','tlabels','pzones'].forEach(id=>{const el=document.getElementById(id); if(el) el.style.display = show?'':'none';});
+  document.getElementById('terrToggle').style.display = inSalesView?'':'none';
+}
+document.getElementById('terrToggle').addEventListener('click',()=>{
+  terrOn=!terrOn;
+  document.getElementById('terrToggle').setAttribute('aria-pressed',terrOn);
+  updateTerr();
+});
+
 // --- view tabs (Sales / Trainers / Sales+Trainers) ---
 document.getElementById('tabs').addEventListener('click',e=>{
   const t=e.target.closest('.tab'); if(!t) return;
@@ -322,11 +358,12 @@ document.getElementById('tabs').addEventListener('click',e=>{
   document.querySelectorAll('.tab').forEach(x=>{const on=x===t;x.classList.toggle('active',on);x.setAttribute('aria-selected',on);});
   active=null;
   document.querySelectorAll('.pin,.card').forEach(el=>el.classList.remove('active'));
-  resetView(); hideTip(); applyFilters(); updateStats();
+  resetView(); hideTip(); applyFilters(); updateStats(); updateTerr();
 });
 
 applyFilters();
 updateStats();
+updateTerr();
 
 // --- theme toggle ---
 document.getElementById('themeBtn').addEventListener('click',()=>{

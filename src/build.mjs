@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { geoAlbersUsa, geoPath } from 'd3-geo';
-import { feature, mesh } from 'topojson-client';
+import { feature, mesh, merge } from 'topojson-client';
 
 const topo = JSON.parse(readFileSync(new URL('./node_modules/us-atlas/states-10m.json', import.meta.url)));
 const nation = JSON.parse(readFileSync(new URL('./node_modules/us-atlas/nation-10m.json', import.meta.url)));
@@ -55,8 +55,69 @@ const placed = reps.map(r => {
   return { ...r, x: +p[0].toFixed(1), y: +p[1].toFixed(1) };
 });
 
+// ---- Sales territories (medical-aesthetics regional coverage, full US) ----
+// Each state is assigned to exactly one active sales rep. Direct reps own their
+// home state (Kyle=FL, Nick=CO, Taylor=SoCal); co-located indirect reps take an
+// adjacent block so every rep gets a contiguous region.
+const TERRITORY = {
+  'Taylor Macey':      ['California','Nevada','Hawaii'],
+  'Cosmetic Solutions':['Oregon','Washington','Idaho','Alaska'],
+  'John Godson':       ['Arizona','New Mexico'],
+  'Nick':              ['Colorado','Utah','Wyoming'],
+  'Trina Barr':        ['Montana','North Dakota','South Dakota','Nebraska'],
+  'John Dawson':       ['Texas','Oklahoma','Kansas','Louisiana','Arkansas'],
+  'Tammy Graham':      ['Illinois','Missouri','Iowa','Minnesota','Wisconsin','Indiana','Kentucky','Michigan','Ohio'],
+  'Kyle Shapero':      ['Florida','Georgia','Alabama','Mississippi','Tennessee','South Carolina'],
+  'Karla Smyth':       ['North Carolina','Virginia','West Virginia'],
+  'Andrew Liscio, RN': ['New Jersey','New York','Pennsylvania','Connecticut','Rhode Island','Massachusetts',
+                        'New Hampshire','Vermont','Maine','Maryland','Delaware','District of Columbia'],
+};
+// Distinct regional fill color per rep (pins stay colored by role; these are light washes).
+const TERR_COLOR = {
+  'Taylor Macey':'#17becf','Cosmetic Solutions':'#9467bd','John Godson':'#ff7f0e','Nick':'#d62728',
+  'Trina Barr':'#1f77b4','John Dawson':'#2ca02c','Tammy Graham':'#bcbd22','Kyle Shapero':'#e377c2',
+  'Karla Smyth':'#8c564b','Andrew Liscio, RN':'#7f7f7f',
+};
+const ownerByName = {};
+for (const [rep, sts] of Object.entries(TERRITORY)) for (const s of sts) ownerByName[s] = rep;
+const ownerOf = g => ownerByName[g.properties.name] || null;
+
+const geoms = topo.objects.states.geometries;
+const shortName = n => (n === 'Cosmetic Solutions' ? 'Cosmetic Sol.' : n.replace(/,.*$/, '').split(' ').slice(-1)[0]);
+
+// Per-state colored fills
+const territories = states.features
+  .filter(f => ownerByName[f.properties.name])
+  .map(f => ({ owner: ownerByName[f.properties.name], color: TERR_COLOR[ownerByName[f.properties.name]], d: path(f) }));
+
+// Borders between different territories (thicker line)
+const terrBorderPath = path(mesh(topo, topo.objects.states, (a, b) => ownerOf(a) !== ownerOf(b)));
+
+// One label per territory at its centroid
+const terrLabels = Object.entries(TERRITORY).map(([rep, sts]) => {
+  const gs = geoms.filter(g => sts.includes(g.properties.name));
+  const c = path.centroid(merge(topo, gs));
+  return { name: shortName(rep), color: TERR_COLOR[rep], x: +c[0].toFixed(1), y: +c[1].toFixed(1) };
+}).filter(l => Number.isFinite(l.x) && Number.isFinite(l.y));
+
+// Prospect recruiting-target zones (dashed overlay; may overlap current territories)
+const PROSPECT_ZONES = {
+  'Jonathan Butto': ['Florida'],
+  'Manny Robelo':   ['Massachusetts','Connecticut','Rhode Island','New Hampshire','Vermont','Maine'],
+  'Seth Cooley':    ['Colorado','Utah'],
+  'Scott Kelly':    ['Texas'],
+  'Zac Replogle':   ['California'],
+};
+const prospectZones = Object.entries(PROSPECT_ZONES).map(([name, sts]) => {
+  const inSet = g => sts.includes(g.properties.name);
+  const d = path(mesh(topo, topo.objects.states, (a, b) => inSet(a) !== inSet(b)));
+  const c = path.centroid(merge(topo, geoms.filter(inSet)));
+  return { name, d, x: +c[0].toFixed(1), y: +c[1].toFixed(1) };
+});
+
 writeFileSync(new URL('./mapdata.json', import.meta.url), JSON.stringify({
-  W, H, statePaths, borderPath, nationPath, reps: placed
+  W, H, statePaths, borderPath, nationPath, reps: placed,
+  territories, terrBorderPath, terrLabels, prospectZones
 }, null, 0));
 
 console.log('states path len', statePaths.length);
