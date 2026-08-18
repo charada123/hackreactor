@@ -9,7 +9,7 @@ const html = `<title>Sales Rep Territory Map</title>
     --ink:#152431; --muted:#5d6d7a; --faint:#8a97a2;
     --line:#dbe3e9; --line-strong:#c7d1d9;
     --land:#e5ebef; --land-line:#c3ccd4; --land-hi:#d5dee4;
-    --field:#0e7c7b; --trainer:#cf5f38; --team:#6d4a86;
+    --field:#0e7c7b; --trainer:#cf5f38; --team:#6d4a86; --prospect:#2f6f9f;
     --accent:#0e7c7b;
     --shadow:0 1px 2px rgba(20,40,60,.06),0 8px 24px rgba(20,40,60,.08);
     --radius:14px;
@@ -21,7 +21,7 @@ const html = `<title>Sales Rep Territory Map</title>
       --ink:#e9f1f6; --muted:#93a3b0; --faint:#657481;
       --line:#20303c; --line-strong:#2a3d4a;
       --land:#1a2833; --land-line:#2c404e; --land-hi:#233542;
-      --field:#2bb9b3; --trainer:#e58256; --team:#a988c4;
+      --field:#2bb9b3; --trainer:#e58256; --team:#a988c4; --prospect:#5b9bd5;
       --accent:#2bb9b3;
       --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
     }
@@ -31,7 +31,7 @@ const html = `<title>Sales Rep Territory Map</title>
     --ink:#152431; --muted:#5d6d7a; --faint:#8a97a2;
     --line:#dbe3e9; --line-strong:#c7d1d9;
     --land:#e5ebef; --land-line:#c3ccd4; --land-hi:#d5dee4;
-    --field:#0e7c7b; --trainer:#cf5f38; --team:#6d4a86;
+    --field:#0e7c7b; --trainer:#cf5f38; --team:#6d4a86; --prospect:#2f6f9f;
     --accent:#0e7c7b;
     --shadow:0 1px 2px rgba(20,40,60,.06),0 8px 24px rgba(20,40,60,.08);
   }
@@ -40,7 +40,7 @@ const html = `<title>Sales Rep Territory Map</title>
     --ink:#e9f1f6; --muted:#93a3b0; --faint:#657481;
     --line:#20303c; --line-strong:#2a3d4a;
     --land:#1a2833; --land-line:#2c404e; --land-hi:#233542;
-    --field:#2bb9b3; --trainer:#e58256; --team:#a988c4;
+    --field:#2bb9b3; --trainer:#e58256; --team:#a988c4; --prospect:#5b9bd5;
     --accent:#2bb9b3;
     --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
   }
@@ -78,6 +78,7 @@ const html = `<title>Sales Rep Territory Map</title>
   .chip[aria-pressed="false"]{opacity:.4;}
   .chip:hover{border-color:var(--accent);color:var(--ink);}
   .chip .dot.field{background:var(--field)} .chip .dot.trainer{background:var(--trainer)} .chip .dot.team{background:var(--team)}
+  .chip .dot.prospect{background:transparent;border:2px solid var(--prospect)}
 
   .list{list-style:none;margin:0;padding:8px;overflow:auto;flex:1;min-height:120px;}
   .card{display:flex;gap:11px;padding:11px 11px;border-radius:11px;cursor:pointer;align-items:flex-start;
@@ -88,6 +89,7 @@ const html = `<title>Sales Rep Territory Map</title>
   .pinico.field{color:var(--field);background:var(--field)}
   .pinico.trainer{color:var(--trainer);background:var(--trainer)}
   .pinico.team{color:var(--team);background:var(--team)}
+  .pinico.prospect{color:var(--prospect);background:transparent;border:2px solid var(--prospect);box-shadow:none}
   .card .who{display:flex;flex-direction:column;gap:2px;min-width:0;}
   .card .nm{font-weight:650;font-size:14px;letter-spacing:-.01em;}
   .card .cy{font-size:12.5px;color:var(--ink);opacity:.85;}
@@ -111,7 +113,9 @@ const html = `<title>Sales Rep Territory Map</title>
   .pin .halo{opacity:0;transform-box:fill-box;transform-origin:center;}
   .pin .core{stroke:var(--panel);stroke-width:2;transition:r .2s;}
   .pin.field .core{fill:var(--field)} .pin.trainer .core{fill:var(--trainer)} .pin.team .core{fill:var(--team)}
+  .pin.prospect .core{fill:var(--panel);stroke:var(--prospect);stroke-width:2.5}
   .pin.field .halo{fill:var(--field)} .pin.trainer .halo{fill:var(--trainer)} .pin.team .halo{fill:var(--team)}
+  .pin.prospect .halo{fill:var(--prospect)}
   .pin .badge{fill:var(--panel);}
   .pin .badgetx{font:700 9px var(--sans);fill:var(--ink);text-anchor:middle;dominant-baseline:central;}
   .pin.dim{opacity:.18;pointer-events:none;}
@@ -155,6 +159,7 @@ const html = `<title>Sales Rep Territory Map</title>
         <button class="chip" data-g="field" aria-pressed="true"><span class="dot field"></span>Field rep</button>
         <button class="chip" data-g="trainer" aria-pressed="true"><span class="dot trainer"></span>Trainer</button>
         <button class="chip" data-g="team" aria-pressed="true"><span class="dot team"></span>Team</button>
+        <button class="chip" data-g="prospect" aria-pressed="true"><span class="dot prospect"></span>Prospect</button>
       </div>
       <ul class="list" id="list"></ul>
     </aside>
@@ -174,7 +179,7 @@ const html = `<title>Sales Rep Territory Map</title>
   </div>
 
   <footer>
-    <span>Roles are color-coded: <b style="color:var(--field)">field</b>, <b style="color:var(--trainer)">trainer</b>, <b style="color:var(--team)">team</b>.</span>
+    <span>Color-coded: <b style="color:var(--field)">field</b>, <b style="color:var(--trainer)">trainer</b>, <b style="color:var(--team)">team</b>, <b style="color:var(--prospect)">prospect</b> (recruiting target, hollow pin).</span>
     <button class="theme" id="themeBtn">Toggle theme</button>
   </footer>
 </div>
@@ -182,7 +187,7 @@ const html = `<title>Sales Rep Territory Map</title>
 <script>
 const DATA = ${JSON.stringify(d.reps)};
 const stateOf = c => (c.split(',').pop()||'').trim().split(/[ /]/).pop();
-const groupLabel = {field:'Field rep',trainer:'Trainer',team:'Team'};
+const groupLabel = {field:'Field rep',trainer:'Trainer',team:'Team',prospect:'Prospect'};
 
 const pinsG = document.getElementById('pins');
 const listEl = document.getElementById('list');
@@ -191,7 +196,7 @@ const wrap = document.getElementById('mapwrap');
 const vp = document.getElementById('vp');
 const W=${d.W}, H=${d.H};
 let active = null;
-const filters = {field:true,trainer:true,team:true};
+const filters = {field:true,trainer:true,team:true,prospect:true};
 
 // --- render pins ---
 DATA.forEach((r,i)=>{
