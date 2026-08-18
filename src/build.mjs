@@ -17,25 +17,37 @@ const statePaths = states.features.map(f => path(f)).join(' ');
 const borderPath = path(borders);
 const nationPath = path(nationF);
 
-// Rep locations
+// Rep locations. `views` = which tab(s) a person shows in: 'sales', 'trainer', or both.
 const reps = [
-  { name: 'John Godson', city: 'Tempe, AZ', role: 'Sales Rep', lat: 33.4255, lng: -111.9400, group: 'field' },
-  { name: 'Karla Smyth', city: 'Boca Raton, FL', role: 'Sales Rep', lat: 26.3683, lng: -80.1289, group: 'field' },
-  { name: 'Trina Barr', city: 'Boulder, CO', role: 'Sales Rep · Innovaes Labs', lat: 40.0150, lng: -105.2705, group: 'field' },
-  { name: 'Tammy Graham', city: 'Caseyville, IL', role: 'Sales Rep', lat: 38.6367, lng: -89.9812, group: 'field' },
-  { name: 'Andrew Lisco, RN', city: 'Neptune, NJ', role: 'Trainer & Sales Rep', lat: 40.2043, lng: -74.0276, group: 'trainer' },
-  { name: 'Cosmetic Solutions', city: 'Northern CA / Reno', role: 'Lauren Padilla · Omira Sadiq · Candace Clay · Nadia Buchlo', lat: 39.5296, lng: -119.8138, group: 'team' },
+  { name: 'John Godson', city: 'Tempe, AZ', role: 'Sales Rep', lat: 33.4255, lng: -111.9400, group: 'field', views: ['sales'] },
+  { name: 'Karla Smyth', city: 'Boca Raton, FL', role: 'Sales Rep', lat: 26.3683, lng: -80.1289, group: 'field', views: ['sales'] },
+  { name: 'Trina Barr', city: 'Boulder, CO', role: 'Sales Rep · Innovaes Labs', lat: 40.0150, lng: -105.2705, group: 'field', views: ['sales'] },
+  { name: 'Tammy Graham', city: 'Caseyville, IL', role: 'Sales Rep & Clinical Trainer', lat: 38.6367, lng: -89.9812, group: 'field', views: ['sales', 'trainer'] },
+  { name: 'Andrew Liscio, RN', city: 'Neptune, NJ', role: 'Trainer & Sales Rep · The Andrew Aesthetic', lat: 40.2043, lng: -74.0276, group: 'trainer', views: ['sales', 'trainer'] },
+  { name: 'Cosmetic Solutions', city: 'Northern CA / Reno', role: 'Lauren Padilla · Omira Sadiq · Candace Clay · Nadia Buchlo', lat: 39.5296, lng: -119.8138, group: 'team', views: ['sales'] },
   // Sales reps
-  { name: 'John Dawson', city: 'Lewisville, TX', role: 'Sales Rep', lat: 33.0462, lng: -96.9942, group: 'field' },
-  { name: 'Taylor Macey', city: 'Los Angeles, CA', role: 'Direct Sales Rep · SoCal', lat: 34.0522, lng: -118.2437, group: 'direct' },
-  { name: 'Kyle Shapero', city: 'Orlando, FL', role: 'Direct Sales Rep · FL', lat: 28.5383, lng: -81.3792, group: 'direct' },
-  { name: 'Nick', city: 'Colorado Springs, CO', role: 'Direct Sales Rep · Colorado', lat: 38.8339, lng: -104.8214, group: 'direct' },
+  { name: 'John Dawson', city: 'Lewisville, TX', role: 'Sales Rep', lat: 33.0462, lng: -96.9942, group: 'field', views: ['sales'] },
+  { name: 'Taylor Macey', city: 'Los Angeles, CA', role: 'Direct Sales Rep · SoCal', lat: 34.0522, lng: -118.2437, group: 'direct', views: ['sales'] },
+  { name: 'Kyle Shapero', city: 'Orlando, FL', role: 'Direct Sales Rep · FL', lat: 28.5383, lng: -81.3792, group: 'direct', views: ['sales'] },
+  { name: 'Nick', city: 'Colorado Springs, CO', role: 'Direct Sales Rep · Colorado', lat: 38.8339, lng: -104.8214, group: 'direct', views: ['sales'] },
   // Recruiting targets (prospects) — shown distinctly
-  { name: 'Jonathan Butto', city: 'Southern Florida', role: 'Sr. TM · Prospect', lat: 25.7617, lng: -80.1918, group: 'prospect' },
-  { name: 'Manny Robelo', city: 'Boston, MA', role: 'DSM · Prospect', lat: 42.3601, lng: -71.0589, group: 'prospect' },
-  { name: 'Seth Cooley', city: 'CO / UT', role: 'DSM · Prospect', lat: 40.7608, lng: -111.8910, group: 'prospect' },
-  { name: 'Scott Kelly', city: 'Texas', role: 'RBD · Prospect', lat: 29.7604, lng: -95.3698, group: 'prospect' },
-  { name: 'Zac Replogle', city: 'NorCal', role: 'RBD · Prospect', lat: 37.7749, lng: -122.4194, group: 'prospect' },
+  { name: 'Jonathan Butto', city: 'Southern Florida', role: 'Sr. TM · Prospect', lat: 25.7617, lng: -80.1918, group: 'prospect', views: ['sales'] },
+  { name: 'Manny Robelo', city: 'Boston, MA', role: 'DSM · Prospect', lat: 42.3601, lng: -71.0589, group: 'prospect', views: ['sales'] },
+  { name: 'Seth Cooley', city: 'CO / UT', role: 'DSM · Prospect', lat: 40.7608, lng: -111.8910, group: 'prospect', views: ['sales'] },
+  { name: 'Scott Kelly', city: 'Texas', role: 'RBD · Prospect', lat: 29.7604, lng: -95.3698, group: 'prospect', views: ['sales'] },
+  { name: 'Zac Replogle', city: 'NorCal', role: 'RBD · Prospect', lat: 37.7749, lng: -122.4194, group: 'prospect', views: ['sales'] },
+  // Clinical trainers (Clinical Team Update). Group 'trainer', shown in the Trainers tab.
+  { name: 'Anais Cardona', city: 'Houston, TX', role: 'Clinical Trainer · Quantica Medspa', lat: 29.7604, lng: -95.3698, group: 'trainer', views: ['trainer'] },
+  { name: 'Carissa McCormack', city: 'Sunnyside, NY', role: 'Clinical Trainer · Northern Center for Plastic Surgery', lat: 40.7433, lng: -73.9196, group: 'trainer', views: ['trainer'] },
+  { name: 'Janet Breeding', city: 'Rockford, TN', role: 'Clinical Trainer · The Skin Wellness Center', lat: 35.8309, lng: -83.9207, group: 'trainer', views: ['trainer'] },
+  { name: 'Julie Bennet', city: 'Austin, TX', role: 'Clinical Trainer · Skin Bar Austin', lat: 30.2672, lng: -97.7431, group: 'trainer', views: ['trainer'] },
+  { name: 'Laura Reynolds', city: 'Anaheim, CA', role: 'Clinical Trainer · Zena Medical', lat: 33.8353, lng: -117.9145, group: 'trainer', views: ['trainer'] },
+  { name: 'LeAnna Arietta', city: 'Azusa, CA', role: 'Clinical Trainer · New Image Medspa', lat: 34.1336, lng: -117.9076, group: 'trainer', views: ['trainer'] },
+  { name: 'Leigh Anne Barber', city: 'Charlotte, NC', role: 'Clinical Trainer', lat: 35.2271, lng: -80.8431, group: 'trainer', views: ['trainer'] },
+  { name: 'Logan Winchester', city: 'New York, NY', role: 'Clinical Trainer · Velour Medspa', lat: 40.7580, lng: -73.9855, group: 'trainer', views: ['trainer'] },
+  { name: 'Mika Im', city: 'Irvine, CA', role: 'Clinical Trainer · Ageless MD', lat: 33.6846, lng: -117.8265, group: 'trainer', views: ['trainer'] },
+  { name: 'Patti Nunes', city: 'Boston, MA', role: 'Clinical Trainer · Elisiano Dermatology', lat: 42.3426, lng: -71.0552, group: 'trainer', views: ['trainer'] },
+  { name: 'Tracey Lewis', city: 'Edmond, OK', role: 'Clinical Trainer · Skin Bar OKC', lat: 35.6528, lng: -97.4781, group: 'trainer', views: ['trainer'] },
 ];
 
 const placed = reps.map(r => {

@@ -57,6 +57,11 @@
   .stat b{font-size:20px;font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
   .stat span{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-top:3px;}
 
+  .tabs{display:inline-flex;gap:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:4px;align-self:flex-start;}
+  .tab{font:inherit;font-size:13px;font-weight:650;color:var(--muted);background:none;border:0;border-radius:9px;padding:8px 16px;cursor:pointer;transition:.15s;white-space:nowrap;}
+  .tab:hover{color:var(--ink);}
+  .tab.active{background:var(--panel);color:var(--ink);box-shadow:var(--shadow);}
+
   .layout{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:stretch;}
   @media (max-width:820px){.layout{grid-template-columns:1fr;}}
 
@@ -140,9 +145,9 @@
 <div class="app">
   <header class="head">
     <div class="brand">
-      <span class="eyebrow">Field Team · Coverage Map</span>
-      <h1>Sales Rep Territory Map</h1>
-      <span class="sub">Where the team sits across the country — click a rep to zoom to their pin.</span>
+      <span class="eyebrow">Sales &amp; Clinical · Coverage Map</span>
+      <h1>Team Territory Map</h1>
+      <span class="sub">Switch between Sales, Trainers, and the combined map — click anyone to zoom to their pin.</span>
     </div>
     <div class="head-meta">
       <div class="stat"><b id="repCount">0</b><span>People</span></div>
@@ -150,6 +155,12 @@
       <div class="stat"><b id="stateCount">0</b><span>States</span></div>
     </div>
   </header>
+
+  <div class="tabs" id="tabs" role="tablist" aria-label="Map views">
+    <button class="tab active" data-v="sales" role="tab" aria-selected="true">Sales</button>
+    <button class="tab" data-v="trainer" role="tab" aria-selected="false">Trainers</button>
+    <button class="tab" data-v="both" role="tab" aria-selected="false">Sales + Trainers</button>
+  </div>
 
   <div class="layout">
     <aside class="panel roster">
@@ -185,7 +196,7 @@
 </div>
 
 <script>
-const DATA = [{"name":"John Godson","city":"Tempe, AZ","role":"Sales Rep","lat":33.4255,"lng":-111.94,"group":"field","x":243.4,"y":386},{"name":"Karla Smyth","city":"Boca Raton, FL","role":"Sales Rep","lat":26.3683,"lng":-80.1289,"group":"field","x":832,"y":535.7},{"name":"Trina Barr","city":"Boulder, CO","role":"Sales Rep · Innovaes Labs","lat":40.015,"lng":-105.2705,"group":"field","x":374.9,"y":259.7},{"name":"Tammy Graham","city":"Caseyville, IL","role":"Sales Rep","lat":38.6367,"lng":-89.9812,"group":"field","x":625.6,"y":293.7},{"name":"Andrew Lisco, RN","city":"Neptune, NJ","role":"Trainer & Sales Rep","lat":40.2043,"lng":-74.0276,"group":"trainer","x":879.5,"y":221.8},{"name":"Cosmetic Solutions","city":"Northern CA / Reno","role":"Lauren Padilla · Omira Sadiq · Candace Clay · Nadia Buchlo","lat":39.5296,"lng":-119.8138,"group":"team","x":139.2,"y":228.9},{"name":"John Dawson","city":"Lewisville, TX","role":"Sales Rep","lat":33.0462,"lng":-96.9942,"group":"field","x":507.9,"y":417.9},{"name":"Taylor Macey","city":"Los Angeles, CA","role":"Direct Sales Rep · SoCal","lat":34.0522,"lng":-118.2437,"group":"direct","x":136.7,"y":350.5},{"name":"Kyle Shapero","city":"Orlando, FL","role":"Direct Sales Rep · FL","lat":28.5383,"lng":-81.3792,"group":"direct","x":800.9,"y":493.7},{"name":"Nick","city":"Colorado Springs, CO","role":"Direct Sales Rep · Colorado","lat":38.8339,"lng":-104.8214,"group":"direct","x":379.8,"y":285.8},{"name":"Jonathan Butto","city":"Southern Florida","role":"Sr. TM · Prospect","lat":25.7617,"lng":-80.1918,"group":"prospect","x":832.9,"y":548.6},{"name":"Manny Robelo","city":"Boston, MA","role":"DSM · Prospect","lat":42.3601,"lng":-71.0589,"group":"prospect","x":914.2,"y":165},{"name":"Seth Cooley","city":"CO / UT","role":"DSM · Prospect","lat":40.7608,"lng":-111.891,"group":"prospect","x":270.7,"y":229.5},{"name":"Scott Kelly","city":"Texas","role":"RBD · Prospect","lat":29.7604,"lng":-95.3698,"group":"prospect","x":537.4,"y":488.7},{"name":"Zac Replogle","city":"NorCal","role":"RBD · Prospect","lat":37.7749,"lng":-122.4194,"group":"prospect","x":87.5,"y":254.3}];
+const DATA = [{"name":"John Godson","city":"Tempe, AZ","role":"Sales Rep","lat":33.4255,"lng":-111.94,"group":"field","views":["sales"],"x":243.4,"y":386},{"name":"Karla Smyth","city":"Boca Raton, FL","role":"Sales Rep","lat":26.3683,"lng":-80.1289,"group":"field","views":["sales"],"x":832,"y":535.7},{"name":"Trina Barr","city":"Boulder, CO","role":"Sales Rep · Innovaes Labs","lat":40.015,"lng":-105.2705,"group":"field","views":["sales"],"x":374.9,"y":259.7},{"name":"Tammy Graham","city":"Caseyville, IL","role":"Sales Rep & Clinical Trainer","lat":38.6367,"lng":-89.9812,"group":"field","views":["sales","trainer"],"x":625.6,"y":293.7},{"name":"Andrew Liscio, RN","city":"Neptune, NJ","role":"Trainer & Sales Rep · The Andrew Aesthetic","lat":40.2043,"lng":-74.0276,"group":"trainer","views":["sales","trainer"],"x":879.5,"y":221.8},{"name":"Cosmetic Solutions","city":"Northern CA / Reno","role":"Lauren Padilla · Omira Sadiq · Candace Clay · Nadia Buchlo","lat":39.5296,"lng":-119.8138,"group":"team","views":["sales"],"x":139.2,"y":228.9},{"name":"John Dawson","city":"Lewisville, TX","role":"Sales Rep","lat":33.0462,"lng":-96.9942,"group":"field","views":["sales"],"x":507.9,"y":417.9},{"name":"Taylor Macey","city":"Los Angeles, CA","role":"Direct Sales Rep · SoCal","lat":34.0522,"lng":-118.2437,"group":"direct","views":["sales"],"x":136.7,"y":350.5},{"name":"Kyle Shapero","city":"Orlando, FL","role":"Direct Sales Rep · FL","lat":28.5383,"lng":-81.3792,"group":"direct","views":["sales"],"x":800.9,"y":493.7},{"name":"Nick","city":"Colorado Springs, CO","role":"Direct Sales Rep · Colorado","lat":38.8339,"lng":-104.8214,"group":"direct","views":["sales"],"x":379.8,"y":285.8},{"name":"Jonathan Butto","city":"Southern Florida","role":"Sr. TM · Prospect","lat":25.7617,"lng":-80.1918,"group":"prospect","views":["sales"],"x":832.9,"y":548.6},{"name":"Manny Robelo","city":"Boston, MA","role":"DSM · Prospect","lat":42.3601,"lng":-71.0589,"group":"prospect","views":["sales"],"x":914.2,"y":165},{"name":"Seth Cooley","city":"CO / UT","role":"DSM · Prospect","lat":40.7608,"lng":-111.891,"group":"prospect","views":["sales"],"x":270.7,"y":229.5},{"name":"Scott Kelly","city":"Texas","role":"RBD · Prospect","lat":29.7604,"lng":-95.3698,"group":"prospect","views":["sales"],"x":537.4,"y":488.7},{"name":"Zac Replogle","city":"NorCal","role":"RBD · Prospect","lat":37.7749,"lng":-122.4194,"group":"prospect","views":["sales"],"x":87.5,"y":254.3},{"name":"Anais Cardona","city":"Houston, TX","role":"Clinical Trainer · Quantica Medspa","lat":29.7604,"lng":-95.3698,"group":"trainer","views":["trainer"],"x":537.4,"y":488.7},{"name":"Carissa McCormack","city":"Sunnyside, NY","role":"Clinical Trainer · Northern Center for Plastic Surgery","lat":40.7433,"lng":-73.9196,"group":"trainer","views":["trainer"],"x":878.6,"y":210.1},{"name":"Janet Breeding","city":"Rockford, TN","role":"Clinical Trainer · The Skin Wellness Center","lat":35.8309,"lng":-83.9207,"group":"trainer","views":["trainer"],"x":733.5,"y":344.5},{"name":"Julie Bennet","city":"Austin, TX","role":"Clinical Trainer · Skin Bar Austin","lat":30.2672,"lng":-97.7431,"group":"trainer","views":["trainer"],"x":493.4,"y":477.6},{"name":"Laura Reynolds","city":"Anaheim, CA","role":"Clinical Trainer · Zena Medical","lat":33.8353,"lng":-117.9145,"group":"trainer","views":["trainer"],"x":141.2,"y":356.4},{"name":"LeAnna Arietta","city":"Azusa, CA","role":"Clinical Trainer · New Image Medspa","lat":34.1336,"lng":-117.9076,"group":"trainer","views":["trainer"],"x":142.8,"y":350.1},{"name":"Leigh Anne Barber","city":"Charlotte, NC","role":"Clinical Trainer","lat":35.2271,"lng":-80.8431,"group":"trainer","views":["trainer"],"x":788.1,"y":349.8},{"name":"Logan Winchester","city":"New York, NY","role":"Clinical Trainer · Velour Medspa","lat":40.758,"lng":-73.9855,"group":"trainer","views":["trainer"],"x":877.5,"y":210},{"name":"Mika Im","city":"Irvine, CA","role":"Clinical Trainer · Ageless MD","lat":33.6846,"lng":-117.8265,"group":"trainer","views":["trainer"],"x":142,"y":359.9},{"name":"Patti Nunes","city":"Boston, MA","role":"Clinical Trainer · Elisiano Dermatology","lat":42.3426,"lng":-71.0552,"group":"trainer","views":["trainer"],"x":914.4,"y":165.4},{"name":"Tracey Lewis","city":"Edmond, OK","role":"Clinical Trainer · Skin Bar OKC","lat":35.6528,"lng":-97.4781,"group":"trainer","views":["trainer"],"x":500.2,"y":361.4}];
 const stateOf = c => (c.split(',').pop()||'').trim().split(/[ /]/).pop();
 const groupLabel = {direct:'Direct rep',field:'Indirect',trainer:'Trainer',team:'Team',prospect:'Prospect'};
 
@@ -196,6 +207,8 @@ const wrap = document.getElementById('mapwrap');
 const vp = document.getElementById('vp');
 const W=960, H=600;
 let active = null;
+let activeView = 'sales';
+const inView = r => activeView==='both' || (r.views||['sales']).includes(activeView);
 const filters = {direct:true,field:true,trainer:true,team:true,prospect:true};
 
 // --- render pins ---
@@ -275,7 +288,7 @@ function applyFilters(){
   DATA.forEach((r,i)=>{
     const gOn=filters[r.group];
     const hit=!q || (r.name+' '+r.city+' '+r.role).toLowerCase().includes(q);
-    const vis=gOn && hit;
+    const vis=gOn && hit && inView(r);
     listEl.querySelector(`.card[data-idx="${i}"]`).classList.toggle('hidden',!vis);
     pinsG.querySelector(`.pin[data-idx="${i}"]`).classList.toggle('dim',!vis);
     if(vis) shown++;
@@ -291,10 +304,26 @@ document.getElementById('legend').addEventListener('click',e=>{
   c.setAttribute('aria-pressed',filters[g]); applyFilters();
 });
 
-// --- stats ---
-document.getElementById('repCount').textContent = DATA.reduce((n,r)=>n+(r.group==='team'?4:1),0);
-document.getElementById('locCount').textContent = DATA.length;
-document.getElementById('stateCount').textContent = new Set(DATA.map(r=>stateOf(r.city))).size;
+// --- stats (per active view) ---
+function updateStats(){
+  const v = DATA.filter(inView);
+  document.getElementById('repCount').textContent = v.reduce((n,r)=>n+(r.group==='team'?4:1),0);
+  document.getElementById('locCount').textContent = v.length;
+  document.getElementById('stateCount').textContent = new Set(v.map(r=>stateOf(r.city))).size;
+}
+
+// --- view tabs (Sales / Trainers / Sales+Trainers) ---
+document.getElementById('tabs').addEventListener('click',e=>{
+  const t=e.target.closest('.tab'); if(!t) return;
+  activeView=t.dataset.v;
+  document.querySelectorAll('.tab').forEach(x=>{const on=x===t;x.classList.toggle('active',on);x.setAttribute('aria-selected',on);});
+  active=null;
+  document.querySelectorAll('.pin,.card').forEach(el=>el.classList.remove('active'));
+  resetView(); hideTip(); applyFilters(); updateStats();
+});
+
+applyFilters();
+updateStats();
 
 // --- theme toggle ---
 document.getElementById('themeBtn').addEventListener('click',()=>{

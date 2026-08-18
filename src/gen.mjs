@@ -60,6 +60,11 @@ const html = `<title>Sales Rep Territory Map</title>
   .stat b{font-size:20px;font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
   .stat span{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-top:3px;}
 
+  .tabs{display:inline-flex;gap:4px;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:4px;align-self:flex-start;}
+  .tab{font:inherit;font-size:13px;font-weight:650;color:var(--muted);background:none;border:0;border-radius:9px;padding:8px 16px;cursor:pointer;transition:.15s;white-space:nowrap;}
+  .tab:hover{color:var(--ink);}
+  .tab.active{background:var(--panel);color:var(--ink);box-shadow:var(--shadow);}
+
   .layout{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:stretch;}
   @media (max-width:820px){.layout{grid-template-columns:1fr;}}
 
@@ -143,9 +148,9 @@ const html = `<title>Sales Rep Territory Map</title>
 <div class="app">
   <header class="head">
     <div class="brand">
-      <span class="eyebrow">Field Team · Coverage Map</span>
-      <h1>Sales Rep Territory Map</h1>
-      <span class="sub">Where the team sits across the country — click a rep to zoom to their pin.</span>
+      <span class="eyebrow">Sales &amp; Clinical · Coverage Map</span>
+      <h1>Team Territory Map</h1>
+      <span class="sub">Switch between Sales, Trainers, and the combined map — click anyone to zoom to their pin.</span>
     </div>
     <div class="head-meta">
       <div class="stat"><b id="repCount">0</b><span>People</span></div>
@@ -153,6 +158,12 @@ const html = `<title>Sales Rep Territory Map</title>
       <div class="stat"><b id="stateCount">0</b><span>States</span></div>
     </div>
   </header>
+
+  <div class="tabs" id="tabs" role="tablist" aria-label="Map views">
+    <button class="tab active" data-v="sales" role="tab" aria-selected="true">Sales</button>
+    <button class="tab" data-v="trainer" role="tab" aria-selected="false">Trainers</button>
+    <button class="tab" data-v="both" role="tab" aria-selected="false">Sales + Trainers</button>
+  </div>
 
   <div class="layout">
     <aside class="panel roster">
@@ -199,6 +210,8 @@ const wrap = document.getElementById('mapwrap');
 const vp = document.getElementById('vp');
 const W=${d.W}, H=${d.H};
 let active = null;
+let activeView = 'sales';
+const inView = r => activeView==='both' || (r.views||['sales']).includes(activeView);
 const filters = {direct:true,field:true,trainer:true,team:true,prospect:true};
 
 // --- render pins ---
@@ -278,7 +291,7 @@ function applyFilters(){
   DATA.forEach((r,i)=>{
     const gOn=filters[r.group];
     const hit=!q || (r.name+' '+r.city+' '+r.role).toLowerCase().includes(q);
-    const vis=gOn && hit;
+    const vis=gOn && hit && inView(r);
     listEl.querySelector(\`.card[data-idx="\${i}"]\`).classList.toggle('hidden',!vis);
     pinsG.querySelector(\`.pin[data-idx="\${i}"]\`).classList.toggle('dim',!vis);
     if(vis) shown++;
@@ -294,10 +307,26 @@ document.getElementById('legend').addEventListener('click',e=>{
   c.setAttribute('aria-pressed',filters[g]); applyFilters();
 });
 
-// --- stats ---
-document.getElementById('repCount').textContent = DATA.reduce((n,r)=>n+(r.group==='team'?4:1),0);
-document.getElementById('locCount').textContent = DATA.length;
-document.getElementById('stateCount').textContent = new Set(DATA.map(r=>stateOf(r.city))).size;
+// --- stats (per active view) ---
+function updateStats(){
+  const v = DATA.filter(inView);
+  document.getElementById('repCount').textContent = v.reduce((n,r)=>n+(r.group==='team'?4:1),0);
+  document.getElementById('locCount').textContent = v.length;
+  document.getElementById('stateCount').textContent = new Set(v.map(r=>stateOf(r.city))).size;
+}
+
+// --- view tabs (Sales / Trainers / Sales+Trainers) ---
+document.getElementById('tabs').addEventListener('click',e=>{
+  const t=e.target.closest('.tab'); if(!t) return;
+  activeView=t.dataset.v;
+  document.querySelectorAll('.tab').forEach(x=>{const on=x===t;x.classList.toggle('active',on);x.setAttribute('aria-selected',on);});
+  active=null;
+  document.querySelectorAll('.pin,.card').forEach(el=>el.classList.remove('active'));
+  resetView(); hideTip(); applyFilters(); updateStats();
+});
+
+applyFilters();
+updateStats();
 
 // --- theme toggle ---
 document.getElementById('themeBtn').addEventListener('click',()=>{
