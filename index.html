@@ -6,7 +6,7 @@
     --ink:#152431; --muted:#5d6d7a; --faint:#8a97a2;
     --line:#dbe3e9; --line-strong:#c7d1d9;
     --land:#e5ebef; --land-line:#c3ccd4; --land-hi:#d5dee4;
-    --field:#0e7c7b; --trainer:#cf5f38; --team:#6d4a86; --prospect:#2f6f9f;
+    --field:#0e7c7b; --trainer:#cf5f38; --team:#6d4a86; --prospect:#2f6f9f; --direct:#c23a86;
     --accent:#0e7c7b;
     --shadow:0 1px 2px rgba(20,40,60,.06),0 8px 24px rgba(20,40,60,.08);
     --radius:14px;
@@ -18,7 +18,7 @@
       --ink:#e9f1f6; --muted:#93a3b0; --faint:#657481;
       --line:#20303c; --line-strong:#2a3d4a;
       --land:#1a2833; --land-line:#2c404e; --land-hi:#233542;
-      --field:#2bb9b3; --trainer:#e58256; --team:#a988c4; --prospect:#5b9bd5;
+      --field:#2bb9b3; --trainer:#e58256; --team:#a988c4; --prospect:#5b9bd5; --direct:#e274b4;
       --accent:#2bb9b3;
       --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
     }
@@ -28,7 +28,7 @@
     --ink:#152431; --muted:#5d6d7a; --faint:#8a97a2;
     --line:#dbe3e9; --line-strong:#c7d1d9;
     --land:#e5ebef; --land-line:#c3ccd4; --land-hi:#d5dee4;
-    --field:#0e7c7b; --trainer:#cf5f38; --team:#6d4a86; --prospect:#2f6f9f;
+    --field:#0e7c7b; --trainer:#cf5f38; --team:#6d4a86; --prospect:#2f6f9f; --direct:#c23a86;
     --accent:#0e7c7b;
     --shadow:0 1px 2px rgba(20,40,60,.06),0 8px 24px rgba(20,40,60,.08);
   }
@@ -37,7 +37,7 @@
     --ink:#e9f1f6; --muted:#93a3b0; --faint:#657481;
     --line:#20303c; --line-strong:#2a3d4a;
     --land:#1a2833; --land-line:#2c404e; --land-hi:#233542;
-    --field:#2bb9b3; --trainer:#e58256; --team:#a988c4; --prospect:#5b9bd5;
+    --field:#2bb9b3; --trainer:#e58256; --team:#a988c4; --prospect:#5b9bd5; --direct:#e274b4;
     --accent:#2bb9b3;
     --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
   }
@@ -76,6 +76,7 @@
   .chip:hover{border-color:var(--accent);color:var(--ink);}
   .chip .dot.field{background:var(--field)} .chip .dot.trainer{background:var(--trainer)} .chip .dot.team{background:var(--team)}
   .chip .dot.prospect{background:transparent;border:2px solid var(--prospect)}
+  .chip .dot.direct{background:var(--direct)}
 
   .list{list-style:none;margin:0;padding:8px;overflow:auto;flex:1;min-height:120px;}
   .card{display:flex;gap:11px;padding:11px 11px;border-radius:11px;cursor:pointer;align-items:flex-start;
@@ -87,6 +88,7 @@
   .pinico.trainer{color:var(--trainer);background:var(--trainer)}
   .pinico.team{color:var(--team);background:var(--team)}
   .pinico.prospect{color:var(--prospect);background:transparent;border:2px solid var(--prospect);box-shadow:none}
+  .pinico.direct{color:var(--direct);background:var(--direct)}
   .card .who{display:flex;flex-direction:column;gap:2px;min-width:0;}
   .card .nm{font-weight:650;font-size:14px;letter-spacing:-.01em;}
   .card .cy{font-size:12.5px;color:var(--ink);opacity:.85;}
@@ -110,9 +112,9 @@
   .pin .halo{opacity:0;transform-box:fill-box;transform-origin:center;}
   .pin .core{stroke:var(--panel);stroke-width:2;transition:r .2s;}
   .pin.field .core{fill:var(--field)} .pin.trainer .core{fill:var(--trainer)} .pin.team .core{fill:var(--team)}
-  .pin.prospect .core{fill:var(--panel);stroke:var(--prospect);stroke-width:2.5}
+  .pin.prospect .core{fill:var(--panel);stroke:var(--prospect);stroke-width:2.5} .pin.direct .core{fill:var(--direct)}
   .pin.field .halo{fill:var(--field)} .pin.trainer .halo{fill:var(--trainer)} .pin.team .halo{fill:var(--team)}
-  .pin.prospect .halo{fill:var(--prospect)}
+  .pin.prospect .halo{fill:var(--prospect)} .pin.direct .halo{fill:var(--direct)}
   .pin .badge{fill:var(--panel);}
   .pin .badgetx{font:700 9px var(--sans);fill:var(--ink);text-anchor:middle;dominant-baseline:central;}
   .pin.dim{opacity:.18;pointer-events:none;}
@@ -153,6 +155,7 @@
     <aside class="panel roster">
       <div class="search"><input id="q" type="search" placeholder="Search name, city, or state…" aria-label="Search reps"></div>
       <div class="legend" id="legend">
+        <button class="chip" data-g="direct" aria-pressed="true"><span class="dot direct"></span>Direct rep</button>
         <button class="chip" data-g="field" aria-pressed="true"><span class="dot field"></span>Field rep</button>
         <button class="chip" data-g="trainer" aria-pressed="true"><span class="dot trainer"></span>Trainer</button>
         <button class="chip" data-g="team" aria-pressed="true"><span class="dot team"></span>Team</button>
@@ -176,15 +179,15 @@
   </div>
 
   <footer>
-    <span>Color-coded: <b style="color:var(--field)">field</b>, <b style="color:var(--trainer)">trainer</b>, <b style="color:var(--team)">team</b>, <b style="color:var(--prospect)">prospect</b> (recruiting target, hollow pin).</span>
+    <span>Color-coded: <b style="color:var(--direct)">direct rep</b>, <b style="color:var(--field)">field</b>, <b style="color:var(--trainer)">trainer</b>, <b style="color:var(--team)">team</b>, <b style="color:var(--prospect)">prospect</b> (recruiting target, hollow pin).</span>
     <button class="theme" id="themeBtn">Toggle theme</button>
   </footer>
 </div>
 
 <script>
-const DATA = [{"name":"John Godson","city":"Tempe, AZ","role":"Sales Rep","lat":33.4255,"lng":-111.94,"group":"field","x":243.4,"y":386},{"name":"Karla Smyth","city":"Boca Raton, FL","role":"Sales Rep","lat":26.3683,"lng":-80.1289,"group":"field","x":832,"y":535.7},{"name":"Trina Barr","city":"Boulder, CO","role":"Sales Rep · Innovaes Labs","lat":40.015,"lng":-105.2705,"group":"field","x":374.9,"y":259.7},{"name":"Tammy Graham","city":"Caseyville, IL","role":"Sales Rep","lat":38.6367,"lng":-89.9812,"group":"field","x":625.6,"y":293.7},{"name":"Andrew Lisco, RN","city":"Neptune, NJ","role":"Trainer & Sales Rep","lat":40.2043,"lng":-74.0276,"group":"trainer","x":879.5,"y":221.8},{"name":"Cosmetic Solutions","city":"Northern CA / Reno","role":"Lauren Padilla · Omira Sadiq · Candace Clay · Nadia Buchlo","lat":39.5296,"lng":-119.8138,"group":"team","x":139.2,"y":228.9},{"name":"John Dawson","city":"Lewisville, TX","role":"Sales Rep","lat":33.0462,"lng":-96.9942,"group":"field","x":507.9,"y":417.9},{"name":"Taylor Macey","city":"Los Angeles, CA","role":"Sales Rep · SoCal","lat":34.0522,"lng":-118.2437,"group":"field","x":136.7,"y":350.5},{"name":"Kyle Shapero","city":"Orlando, FL","role":"Sales Rep · FL","lat":28.5383,"lng":-81.3792,"group":"field","x":800.9,"y":493.7},{"name":"Nick","city":"Colorado Springs, CO","role":"Sales Rep · Colorado","lat":38.8339,"lng":-104.8214,"group":"field","x":379.8,"y":285.8},{"name":"Jonathan Butto","city":"Southern Florida","role":"Sr. TM · Prospect","lat":25.7617,"lng":-80.1918,"group":"prospect","x":832.9,"y":548.6},{"name":"Manny Robelo","city":"Boston, MA","role":"DSM · Prospect","lat":42.3601,"lng":-71.0589,"group":"prospect","x":914.2,"y":165},{"name":"Seth Cooley","city":"CO / UT","role":"DSM · Prospect","lat":40.7608,"lng":-111.891,"group":"prospect","x":270.7,"y":229.5},{"name":"Scott Kelly","city":"Texas","role":"RBD · Prospect","lat":29.7604,"lng":-95.3698,"group":"prospect","x":537.4,"y":488.7},{"name":"Zac Replogle","city":"NorCal","role":"RBD · Prospect","lat":37.7749,"lng":-122.4194,"group":"prospect","x":87.5,"y":254.3}];
+const DATA = [{"name":"John Godson","city":"Tempe, AZ","role":"Sales Rep","lat":33.4255,"lng":-111.94,"group":"field","x":243.4,"y":386},{"name":"Karla Smyth","city":"Boca Raton, FL","role":"Sales Rep","lat":26.3683,"lng":-80.1289,"group":"field","x":832,"y":535.7},{"name":"Trina Barr","city":"Boulder, CO","role":"Sales Rep · Innovaes Labs","lat":40.015,"lng":-105.2705,"group":"field","x":374.9,"y":259.7},{"name":"Tammy Graham","city":"Caseyville, IL","role":"Sales Rep","lat":38.6367,"lng":-89.9812,"group":"field","x":625.6,"y":293.7},{"name":"Andrew Lisco, RN","city":"Neptune, NJ","role":"Trainer & Sales Rep","lat":40.2043,"lng":-74.0276,"group":"trainer","x":879.5,"y":221.8},{"name":"Cosmetic Solutions","city":"Northern CA / Reno","role":"Lauren Padilla · Omira Sadiq · Candace Clay · Nadia Buchlo","lat":39.5296,"lng":-119.8138,"group":"team","x":139.2,"y":228.9},{"name":"John Dawson","city":"Lewisville, TX","role":"Sales Rep","lat":33.0462,"lng":-96.9942,"group":"field","x":507.9,"y":417.9},{"name":"Taylor Macey","city":"Los Angeles, CA","role":"Direct Sales Rep · SoCal","lat":34.0522,"lng":-118.2437,"group":"direct","x":136.7,"y":350.5},{"name":"Kyle Shapero","city":"Orlando, FL","role":"Direct Sales Rep · FL","lat":28.5383,"lng":-81.3792,"group":"direct","x":800.9,"y":493.7},{"name":"Nick","city":"Colorado Springs, CO","role":"Direct Sales Rep · Colorado","lat":38.8339,"lng":-104.8214,"group":"direct","x":379.8,"y":285.8},{"name":"Jonathan Butto","city":"Southern Florida","role":"Sr. TM · Prospect","lat":25.7617,"lng":-80.1918,"group":"prospect","x":832.9,"y":548.6},{"name":"Manny Robelo","city":"Boston, MA","role":"DSM · Prospect","lat":42.3601,"lng":-71.0589,"group":"prospect","x":914.2,"y":165},{"name":"Seth Cooley","city":"CO / UT","role":"DSM · Prospect","lat":40.7608,"lng":-111.891,"group":"prospect","x":270.7,"y":229.5},{"name":"Scott Kelly","city":"Texas","role":"RBD · Prospect","lat":29.7604,"lng":-95.3698,"group":"prospect","x":537.4,"y":488.7},{"name":"Zac Replogle","city":"NorCal","role":"RBD · Prospect","lat":37.7749,"lng":-122.4194,"group":"prospect","x":87.5,"y":254.3}];
 const stateOf = c => (c.split(',').pop()||'').trim().split(/[ /]/).pop();
-const groupLabel = {field:'Field rep',trainer:'Trainer',team:'Team',prospect:'Prospect'};
+const groupLabel = {direct:'Direct rep',field:'Field rep',trainer:'Trainer',team:'Team',prospect:'Prospect'};
 
 const pinsG = document.getElementById('pins');
 const listEl = document.getElementById('list');
@@ -193,7 +196,7 @@ const wrap = document.getElementById('mapwrap');
 const vp = document.getElementById('vp');
 const W=960, H=600;
 let active = null;
-const filters = {field:true,trainer:true,team:true,prospect:true};
+const filters = {direct:true,field:true,trainer:true,team:true,prospect:true};
 
 // --- render pins ---
 DATA.forEach((r,i)=>{

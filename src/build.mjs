@@ -27,9 +27,9 @@ const reps = [
   { name: 'Cosmetic Solutions', city: 'Northern CA / Reno', role: 'Lauren Padilla · Omira Sadiq · Candace Clay · Nadia Buchlo', lat: 39.5296, lng: -119.8138, group: 'team' },
   // Sales reps
   { name: 'John Dawson', city: 'Lewisville, TX', role: 'Sales Rep', lat: 33.0462, lng: -96.9942, group: 'field' },
-  { name: 'Taylor Macey', city: 'Los Angeles, CA', role: 'Sales Rep · SoCal', lat: 34.0522, lng: -118.2437, group: 'field' },
-  { name: 'Kyle Shapero', city: 'Orlando, FL', role: 'Sales Rep · FL', lat: 28.5383, lng: -81.3792, group: 'field' },
-  { name: 'Nick', city: 'Colorado Springs, CO', role: 'Sales Rep · Colorado', lat: 38.8339, lng: -104.8214, group: 'field' },
+  { name: 'Taylor Macey', city: 'Los Angeles, CA', role: 'Direct Sales Rep · SoCal', lat: 34.0522, lng: -118.2437, group: 'direct' },
+  { name: 'Kyle Shapero', city: 'Orlando, FL', role: 'Direct Sales Rep · FL', lat: 28.5383, lng: -81.3792, group: 'direct' },
+  { name: 'Nick', city: 'Colorado Springs, CO', role: 'Direct Sales Rep · Colorado', lat: 38.8339, lng: -104.8214, group: 'direct' },
   // Recruiting targets (prospects) — shown distinctly
   { name: 'Jonathan Butto', city: 'Southern Florida', role: 'Sr. TM · Prospect', lat: 25.7617, lng: -80.1918, group: 'prospect' },
   { name: 'Manny Robelo', city: 'Boston, MA', role: 'DSM · Prospect', lat: 42.3601, lng: -71.0589, group: 'prospect' },
