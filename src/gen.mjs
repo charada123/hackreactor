@@ -159,7 +159,7 @@ const html = `<title>Sales Rep Territory Map</title>
       <div class="search"><input id="q" type="search" placeholder="Search name, city, or state…" aria-label="Search reps"></div>
       <div class="legend" id="legend">
         <button class="chip" data-g="direct" aria-pressed="true"><span class="dot direct"></span>Direct rep</button>
-        <button class="chip" data-g="field" aria-pressed="true"><span class="dot field"></span>Field rep</button>
+        <button class="chip" data-g="field" aria-pressed="true"><span class="dot field"></span>Indirect</button>
         <button class="chip" data-g="trainer" aria-pressed="true"><span class="dot trainer"></span>Trainer</button>
         <button class="chip" data-g="team" aria-pressed="true"><span class="dot team"></span>Team</button>
         <button class="chip" data-g="prospect" aria-pressed="true"><span class="dot prospect"></span>Prospect</button>
@@ -182,7 +182,7 @@ const html = `<title>Sales Rep Territory Map</title>
   </div>
 
   <footer>
-    <span>Color-coded: <b style="color:var(--direct)">direct rep</b>, <b style="color:var(--field)">field</b>, <b style="color:var(--trainer)">trainer</b>, <b style="color:var(--team)">team</b>, <b style="color:var(--prospect)">prospect</b> (recruiting target, hollow pin).</span>
+    <span>Color-coded: <b style="color:var(--direct)">direct rep</b>, <b style="color:var(--field)">indirect</b>, <b style="color:var(--trainer)">trainer</b>, <b style="color:var(--team)">team</b>, <b style="color:var(--prospect)">prospect</b> (recruiting target, hollow pin).</span>
     <button class="theme" id="themeBtn">Toggle theme</button>
   </footer>
 </div>
@@ -190,7 +190,7 @@ const html = `<title>Sales Rep Territory Map</title>
 <script>
 const DATA = ${JSON.stringify(d.reps)};
 const stateOf = c => (c.split(',').pop()||'').trim().split(/[ /]/).pop();
-const groupLabel = {direct:'Direct rep',field:'Field rep',trainer:'Trainer',team:'Team',prospect:'Prospect'};
+const groupLabel = {direct:'Direct rep',field:'Indirect',trainer:'Trainer',team:'Team',prospect:'Prospect'};
 
 const pinsG = document.getElementById('pins');
 const listEl = document.getElementById('list');
