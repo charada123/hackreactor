@@ -28,8 +28,8 @@ planning. Reachable from the link in the header of the main map.
 - **West** — AK, WA, OR, ID, CA, NV, AZ, NM, HI
 
 Named candidates under consideration for a region (currently Rich Cialella,
-Regional Business Director, for the Northeast) show on the region's card and
-under its name on the map.
+Regional Business Director, for the Northeast) show on the region's card in
+the sidebar.
 
 All 50 states land in exactly one region (the build fails if that ever stops
 being true). Click a region to zoom in; each region card lists its states and

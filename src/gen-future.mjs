@@ -151,9 +151,6 @@ const html = `<title>Future Consideration Territories</title>
   .rlabel{fill:var(--ink);font:750 13px var(--sans);text-anchor:middle;dominant-baseline:central;pointer-events:none;
     paint-order:stroke;stroke:var(--panel);stroke-width:3.6px;stroke-linejoin:round;letter-spacing:.02em;}
   .rlabel.dim{opacity:.3;}
-  .rsub{fill:var(--ink);font:650 10px var(--sans);text-anchor:middle;dominant-baseline:central;pointer-events:none;
-    paint-order:stroke;stroke:var(--panel);stroke-width:3.2px;stroke-linejoin:round;opacity:.75;}
-  .rsub.dim{opacity:.25;}
 
   .pin{pointer-events:none;}
   .pin .core{stroke:var(--panel);stroke-width:2;}
@@ -218,8 +215,7 @@ const html = `<title>Future Consideration Territories</title>
           <path class="nation" d="${d.nationPath}"></path>
           <g id="pins"></g>
           <g id="rlabels">
-            ${regions.map(r => `<text class="rlabel" data-key="${r.key}" x="${r.x}" y="${r.y}">${r.name}</text>` +
-              r.candidates.map((c, i) => `<text class="rsub" data-key="${r.key}" x="${r.x}" y="${r.y + 15 + i * 12}">${c.name}</text>`).join('')).join('')}
+            ${regions.map(r => `<text class="rlabel" data-key="${r.key}" x="${r.x}" y="${r.y}">${r.name}</text>`).join('')}
           </g>
         </g>
       </svg>
@@ -299,7 +295,7 @@ function select(key){
     p.classList.toggle('active', p.dataset.key===active);
     p.classList.toggle('dim', active!==null && p.dataset.key!==active);
   });
-  document.querySelectorAll('.rlabel,.rsub').forEach(t=>t.classList.toggle('dim', active!==null && t.dataset.key!==active));
+  document.querySelectorAll('.rlabel').forEach(t=>t.classList.toggle('dim', active!==null && t.dataset.key!==active));
   document.querySelectorAll('.pin').forEach(g=>g.classList.toggle('dim', active!==null && g.dataset.region!==active));
   if(active === null){ resetView(); return; }
   const el = document.querySelector(\`.rfill[data-key="\${active}"]\`);
