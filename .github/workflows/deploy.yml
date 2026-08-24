@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - claude/interactive-sales-map-t0ttna
+      - claude/future-territories-page-oau2og
       - main
   workflow_dispatch:
 

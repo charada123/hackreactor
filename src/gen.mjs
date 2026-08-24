@@ -65,6 +65,11 @@ const html = `<title>Sales Rep Territory Map</title>
   .tab:hover{color:var(--ink);}
   .tab.active{background:var(--panel);color:var(--ink);box-shadow:var(--shadow);}
 
+  .navrow{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;}
+  .navlink{font-size:13px;font-weight:650;text-decoration:none;color:var(--muted);background:var(--panel-2);
+    border:1px solid var(--line);border-radius:10px;padding:8px 14px;transition:.15s;}
+  .navlink:hover{color:var(--ink);border-color:var(--accent);}
+
   .layout{display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:stretch;}
   @media (max-width:820px){.layout{grid-template-columns:1fr;}}
 
@@ -168,10 +173,13 @@ const html = `<title>Sales Rep Territory Map</title>
     </div>
   </header>
 
-  <div class="tabs" id="tabs" role="tablist" aria-label="Map views">
-    <button class="tab active" data-v="sales" role="tab" aria-selected="true">Sales</button>
-    <button class="tab" data-v="trainer" role="tab" aria-selected="false">Trainers</button>
-    <button class="tab" data-v="both" role="tab" aria-selected="false">Sales + Trainers</button>
+  <div class="navrow">
+    <div class="tabs" id="tabs" role="tablist" aria-label="Map views">
+      <button class="tab active" data-v="sales" role="tab" aria-selected="true">Sales</button>
+      <button class="tab" data-v="trainer" role="tab" aria-selected="false">Trainers</button>
+      <button class="tab" data-v="both" role="tab" aria-selected="false">Sales + Trainers</button>
+    </div>
+    <a class="navlink" href="future.html">Future consideration territories &rarr;</a>
   </div>
 
   <div class="layout">
