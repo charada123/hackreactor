@@ -25,6 +25,11 @@ const REGIONS = [
     key: 'southeast', name: 'Southeast', color: '#e0619b',
     states: ['Florida', 'Georgia', 'Alabama', 'South Carolina', 'North Carolina'],
     label: ['Georgia', 'Alabama'],
+    subs: [
+      { name: 'FL', states: ['Florida'] },
+      { name: 'AL & GA', states: ['Alabama', 'Georgia'] },
+      { name: 'N/S Carolina', states: ['North Carolina', 'South Carolina'] },
+    ],
   },
   {
     key: 'central', name: 'Central', color: '#2f9e44',
@@ -67,6 +72,21 @@ const unassigned = states.features.map(f => f.properties.name)
   .filter(n => !seen.has(n) && !TERRITORIES.includes(n));
 if (unassigned.length) throw new Error('unassigned states: ' + unassigned.join(', '));
 
+// Sub-territories, where a region is broken down further, must partition it.
+const subByStateName = {};
+for (const r of REGIONS) {
+  if (!r.subs) continue;
+  const listed = r.subs.flatMap(t => t.states);
+  const missing = r.states.filter(st => !listed.includes(st));
+  const extra = listed.filter(st => !r.states.includes(st));
+  if (missing.length || extra.length) {
+    throw new Error(`${r.name} sub-territories don't partition the region` +
+      (missing.length ? ` — missing ${missing.join(', ')}` : '') +
+      (extra.length ? ` — not in region: ${extra.join(', ')}` : ''));
+  }
+  for (const t of r.subs) for (const st of t.states) subByStateName[st] = `${r.key}:${t.name}`;
+}
+
 const geoms = topo.objects.states.geometries;
 const geomsFor = names => geoms.filter(g => names.includes(g.properties.name));
 const regionOf = g => seen.get(g.properties.name) || null;
@@ -76,6 +96,14 @@ const regions = REGIONS.map(r => {
   const c = path.centroid(merge(topo, geomsFor(r.label || r.states)));
   return {
     key: r.key, name: r.name, color: r.color, candidates: r.candidates || [],
+    subs: (r.subs || []).map(t => {
+      const c2 = path.centroid(merge(topo, geomsFor(t.states)));
+      return {
+        name: t.name, states: t.states,
+        d: path({ type: 'Feature', geometry: merge(topo, geomsFor(t.states)) }),
+        x: +c2[0].toFixed(1), y: +c2[1].toFixed(1),
+      };
+    }),
     states: r.states.filter(s => s !== 'District of Columbia'),
     hasDC: r.states.includes('District of Columbia'),
     d: path({ type: 'Feature', geometry: merged }),
@@ -85,6 +113,10 @@ const regions = REGIONS.map(r => {
 
 // Shared boundary between two different regions (drawn heavier than state lines)
 const regionBorderPath = path(mesh(topo, topo.objects.states, (a, b) => regionOf(a) !== regionOf(b)));
+
+// Interior lines that split a region into sub-territories (region borders are separate)
+const subBorderPath = path(mesh(topo, topo.objects.states, (a, b) =>
+  regionOf(a) === regionOf(b) && subByStateName[a.properties.name] !== subByStateName[b.properties.name]));
 
 // ---- Current people, bucketed into the proposed regions ----
 // Same roster as build.mjs; the state is derived from the plotted coordinate so
@@ -125,8 +157,8 @@ const placed = reps.map(r => {
 });
 
 writeFileSync(new URL('./futuredata.json', import.meta.url), JSON.stringify({
-  W, H, statePaths, borderPath, nationPath, regions, regionBorderPath, reps: placed,
+  W, H, statePaths, borderPath, nationPath, regions, regionBorderPath, subBorderPath, reps: placed,
 }, null, 0));
 
-console.log('regions:', regions.map(r => `${r.name} (${r.states.length})${r.candidates.length ? ' candidate: ' + r.candidates.map(c => c.name + ' (' + c.role + ')').join(', ') : ''}`).join(', '));
+console.log('regions:', regions.map(r => `${r.name} (${r.states.length})${r.candidates.length ? ' candidate: ' + r.candidates.map(c => c.name + ' (' + c.role + ')').join(', ') : ''}${r.subs.length ? ' subs: ' + r.subs.map(t => t.name).join(' | ') : ''}`).join(', '));
 console.log('people:', placed.map(p => `${p.name} -> ${p.state} / ${p.region}`).join('\n'));

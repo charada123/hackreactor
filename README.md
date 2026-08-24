@@ -21,11 +21,17 @@ no external services or map-tile servers, so it loads anywhere.
 A second page proposing a five-region split of the country, for territory
 planning. Reachable from the link in the header of the main map.
 
-- **Southeast** — FL, GA, AL, SC, NC
+- **Southeast** — FL, GA, AL, SC, NC — split into three territories:
+  1. FL  2. AL & GA  3. N/S Carolina
 - **Central** — TN, TX, LA, MS, OK, AR, IL, IN, KY, OH, MI, WI
 - **Northeast** — ME, NH, VT, MA, RI, CT, NY, NJ, PA, DE, MD, VA, WV (+ DC)
 - **Great Plains** — UT, CO, NE, WY, MT, SD, ND, MN, IA, KS, MO
 - **West** — AK, WA, OR, ID, CA, NV, AZ, NM, HI
+
+A region can be broken into sub-territories (`subs` in `src/build-future.mjs`,
+which must partition the region or the build fails). They render as tonal bands
+with dashed dividers, numbered on the card and — once you click into the region
+— on the map.
 
 Named candidates under consideration for a region (currently Rich Cialella,
 Regional Business Director, for the Northeast) show on the region's card in
