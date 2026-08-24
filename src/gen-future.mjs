@@ -12,6 +12,21 @@ const ABBR = {
   Virginia:'VA',Washington:'WA','West Virginia':'WV',Wisconsin:'WI',Wyoming:'WY',
 };
 
+// Tonal ramp across a region's territories. Adjacent list positions are pushed
+// to opposite ends of the ramp so neighbouring blocks stay distinguishable.
+function shade(i, n) {
+  if (n < 2) return 1;
+  const half = Math.ceil(n / 2);
+  const order = i % 2 === 0 ? i / 2 : half + (i - 1) / 2;
+  return +(0.6 + (1.4 - 0.6) * (order / (n - 1))).toFixed(3);
+}
+
+// A territory's chips: whole states, plus split states marked (S)/(N).
+const chipsFor = t => [
+  ...t.states.map(st => ABBR[st] || st),
+  ...(t.partial || []).map(q => `${ABBR[q.state] || q.state} (${q.side === 'south' ? 'S' : 'N'})`),
+];
+
 const regions = d.regions.map(r => ({
   ...r,
   abbrs: r.states.map(s => ABBR[s] || s).concat(r.hasDC ? ['DC'] : []),
@@ -220,7 +235,7 @@ const html = `<title>Future Consideration Territories</title>
           <path class="state" d="${d.statePaths}"></path>
           <g id="regions">
             ${regions.map(r => r.subs.length
-              ? r.subs.map((t, i) => `<path class="rfill" data-key="${r.key}" d="${t.d}" fill="${r.color}" style="--k:${[.72, 1, 1.32][i % 3]}"></path>`).join('')
+              ? r.subs.map((t, i) => `<path class="rfill" data-key="${r.key}" d="${t.d}" fill="${r.color}" style="--k:${shade(i, r.subs.length)}"></path>`).join('')
               : `<path class="rfill" data-key="${r.key}" d="${r.d}" fill="${r.color}"></path>`).join('')}
           </g>
           <path class="borders" d="${d.borderPath}"></path>
@@ -247,7 +262,7 @@ const html = `<title>Future Consideration Territories</title>
 
 <script>
 const ABBR = ${JSON.stringify(ABBR)};
-const REGIONS = ${JSON.stringify(regions.map(r => ({ key: r.key, name: r.name, color: r.color, abbrs: r.abbrs, countLabel: r.countLabel, states: r.states, candidates: r.candidates, subs: r.subs.map(t => ({ name: t.name, states: t.states })) })))};
+const REGIONS = ${JSON.stringify(regions.map(r => ({ key: r.key, name: r.name, color: r.color, abbrs: r.abbrs, countLabel: r.countLabel, states: r.states, candidates: r.candidates, subs: r.subs.map(t => ({ name: t.name, states: t.states, chips: chipsFor(t) })) })))};
 const PEOPLE = ${JSON.stringify(d.reps.map(r => ({ name: r.name, city: r.city, role: r.role, group: r.group, state: r.state, region: r.region, x: r.x, y: r.y })))};
 const W=${d.W}, H=${d.H};
 
@@ -273,7 +288,7 @@ REGIONS.forEach(r => {
        ? \`<div class="subs">\${r.subs.map((t,i)=>\`<div class="sub">
             <span class="snumb" style="background:\${r.color}">\${i+1}</span>
             <span class="sname">\${t.name}</span>
-            <span class="abbrs">\${t.states.map(st=>\`<span class="ab">\${ABBR[st]||st}</span>\`).join('')}</span>
+            <span class="abbrs">\${t.chips.map(a=>\`<span class="ab">\${a}</span>\`).join('')}</span>
           </div>\`).join('')}</div>\`
        : \`<div class="abbrs">\${r.abbrs.map(a=>\`<span class="ab">\${a}</span>\`).join('')}</div>\`}\` +
     (who.length
@@ -357,7 +372,7 @@ document.getElementById('q').addEventListener('input', e=>{
   REGIONS.forEach(r=>{
     const hay = (r.name+' '+r.states.join(' ')+' '+r.abbrs.join(' ')+' '+
       r.candidates.map(c=>c.name+' '+c.role).join(' ')+' '+
-      r.subs.map(t=>t.name+' '+t.states.join(' ')).join(' ')).toLowerCase();
+      r.subs.map(t=>t.name+' '+t.states.join(' ')+' '+t.chips.join(' ')).join(' ')).toLowerCase();
     const vis = !q || hay.includes(q);
     listEl.querySelector(\`.rcard[data-key="\${r.key}"]\`).classList.toggle('hidden', !vis);
     if(vis) shown++;

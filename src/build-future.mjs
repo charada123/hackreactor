@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from 'fs';
-import { geoAlbersUsa, geoPath, geoContains } from 'd3-geo';
+import { geoAlbersUsa, geoPath, geoContains, geoArea } from 'd3-geo';
 import { feature, mesh, merge } from 'topojson-client';
+import polygonClipping from 'polygon-clipping';
 
 const topo = JSON.parse(readFileSync(new URL('./node_modules/us-atlas/states-10m.json', import.meta.url)));
 const nation = JSON.parse(readFileSync(new URL('./node_modules/us-atlas/nation-10m.json', import.meta.url)));
@@ -16,6 +17,51 @@ const path = geoPath(projection);
 const statePaths = states.features.map(f => path(f)).join(' ');
 const borderPath = path(borders);
 const nationPath = path(nationF);
+
+// Austin, TX sits on the parallel that splits the two Texas territories.
+const AUSTIN_LAT = 30.2672;
+
+// Everything is normalised to MultiPolygon rings so whole states and clipped
+// pieces of a state can be concatenated into one geometry.
+const toRings = g => g.type === 'Polygon' ? [g.coordinates] : g.coordinates;
+const multi = rings => ({ type: 'MultiPolygon', coordinates: rings });
+
+// Clip a state to one side of a parallel. The cutting edge is densified so it
+// projects as the curve a parallel actually is, not a straight chord.
+function clipToLat(stateFeature, lat, side) {
+  const [[w, sLat], [e, nLat]] = [[-180, -90], [180, 90]];
+  const box = side === 'south' ? [sLat, lat] : [lat, nLat];
+  const [lo, hi] = box;
+  const edge = [];
+  for (let x = w; x <= e; x += 0.05) edge.push([+x.toFixed(3), lat]);
+  const rect = side === 'south'
+    ? [[[w, lo], ...edge, [e, lo], [w, lo]]]
+    : [[[w, hi], [e, hi], ...edge.slice().reverse(), [w, hi]]];
+  const out = polygonClipping.intersection(toRings(stateFeature.geometry), rect);
+  if (!out.length) throw new Error(`clip produced nothing for ${stateFeature.properties.name}`);
+  // polygon-clipping winds rings the opposite way from what d3-geo's spherical
+  // clipping expects; left as-is, a clipped piece renders as the whole globe
+  // minus that piece. Reversing every ring keeps holes consistent too.
+  const rings = out.map(poly => poly.map(ring => ring.slice().reverse()));
+  const area = geoArea(multi(rings));
+  if (!(area > 0) || area >= geoArea(stateFeature)) {
+    throw new Error(`clip of ${stateFeature.properties.name} (${side}) has area ${area} — check ring winding`);
+  }
+  return rings;
+}
+
+// The cut itself, as the run(s) of the parallel that fall inside the state.
+function cutLine(stateFeature, lat) {
+  const lines = [];
+  let run = null;
+  for (let x = -180; x <= -60; x += 0.02) {
+    const p = [+x.toFixed(3), lat];
+    if (geoContains(stateFeature, p)) { (run ||= []).push(p); }
+    else if (run) { if (run.length > 1) lines.push(run); run = null; }
+  }
+  if (run && run.length > 1) lines.push(run);
+  return lines;
+}
 
 // ---- Proposed regions for future territory consideration ----
 // Five contiguous blocks covering all 50 states. `label` states are the subset
@@ -36,6 +82,16 @@ const REGIONS = [
     states: ['Tennessee', 'Texas', 'Louisiana', 'Mississippi', 'Oklahoma', 'Arkansas',
              'Illinois', 'Indiana', 'Kentucky', 'Ohio', 'Michigan', 'Wisconsin'],
     label: ['Illinois', 'Kentucky'],
+    subs: [
+      // Texas is cut along Austin's parallel: "Austin and south" is territory 1.
+      { name: 'S. Texas', states: [], partial: [{ state: 'Texas', side: 'south', lat: AUSTIN_LAT }] },
+      { name: 'N. Texas + OK', states: ['Oklahoma'], owns: ['Texas'],
+        partial: [{ state: 'Texas', side: 'north', lat: AUSTIN_LAT }] },
+      { name: 'LA, MS & AR', states: ['Louisiana', 'Mississippi', 'Arkansas'] },
+      { name: 'TN & KY', states: ['Tennessee', 'Kentucky'] },
+      { name: 'OH & MI', states: ['Ohio', 'Michigan'] },
+      { name: 'IL, IN & WI', states: ['Illinois', 'Indiana', 'Wisconsin'] },
+    ],
   },
   {
     key: 'northeast', name: 'Northeast', color: '#7a6ff0',
@@ -76,7 +132,7 @@ if (unassigned.length) throw new Error('unassigned states: ' + unassigned.join('
 const subByStateName = {};
 for (const r of REGIONS) {
   if (!r.subs) continue;
-  const listed = r.subs.flatMap(t => t.states);
+  const listed = [...new Set(r.subs.flatMap(t => [...t.states, ...(t.partial || []).map(q => q.state)]))];
   const missing = r.states.filter(st => !listed.includes(st));
   const extra = listed.filter(st => !r.states.includes(st));
   if (missing.length || extra.length) {
@@ -84,11 +140,14 @@ for (const r of REGIONS) {
       (missing.length ? ` — missing ${missing.join(', ')}` : '') +
       (extra.length ? ` — not in region: ${extra.join(', ')}` : ''));
   }
-  for (const t of r.subs) for (const st of t.states) subByStateName[st] = `${r.key}:${t.name}`;
+  for (const t of r.subs) for (const st of [...t.states, ...(t.owns || [])]) {
+    subByStateName[st] = `${r.key}:${t.name}`;
+  }
 }
 
 const geoms = topo.objects.states.geometries;
 const geomsFor = names => geoms.filter(g => names.includes(g.properties.name));
+const featureByName = n => states.features.find(f => f.properties.name === n);
 const regionOf = g => seen.get(g.properties.name) || null;
 
 const regions = REGIONS.map(r => {
@@ -97,10 +156,17 @@ const regions = REGIONS.map(r => {
   return {
     key: r.key, name: r.name, color: r.color, candidates: r.candidates || [],
     subs: (r.subs || []).map(t => {
-      const c2 = path.centroid(merge(topo, geomsFor(t.states)));
+      const rings = [
+        ...(t.states.length ? toRings(merge(topo, geomsFor(t.states))) : []),
+        ...(t.partial || []).flatMap(q => clipToLat(featureByName(q.state), q.lat, q.side)),
+      ];
+      const geom = multi(rings);
+      const c2 = path.centroid(geom);
       return {
-        name: t.name, states: t.states,
-        d: path({ type: 'Feature', geometry: merge(topo, geomsFor(t.states)) }),
+        name: t.name,
+        states: t.states,
+        partial: (t.partial || []).map(q => ({ state: q.state, side: q.side })),
+        d: path(geom),
         x: +c2[0].toFixed(1), y: +c2[1].toFixed(1),
       };
     }),
@@ -115,8 +181,12 @@ const regions = REGIONS.map(r => {
 const regionBorderPath = path(mesh(topo, topo.objects.states, (a, b) => regionOf(a) !== regionOf(b)));
 
 // Interior lines that split a region into sub-territories (region borders are separate)
-const subBorderPath = path(mesh(topo, topo.objects.states, (a, b) =>
+const subMeshPath = path(mesh(topo, topo.objects.states, (a, b) =>
   regionOf(a) === regionOf(b) && subByStateName[a.properties.name] !== subByStateName[b.properties.name]));
+const cutPaths = REGIONS.flatMap(r => (r.subs || []).flatMap(t => (t.partial || [])))
+  .filter((q, i, all) => all.findIndex(o => o.state === q.state && o.lat === q.lat) === i)
+  .map(q => path({ type: 'MultiLineString', coordinates: cutLine(featureByName(q.state), q.lat) }));
+const subBorderPath = [subMeshPath, ...cutPaths].filter(Boolean).join(' ');
 
 // ---- Current people, bucketed into the proposed regions ----
 // Same roster as build.mjs; the state is derived from the plotted coordinate so

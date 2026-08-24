@@ -23,13 +23,19 @@ planning. Reachable from the link in the header of the main map.
 
 - **Southeast** — FL, GA, AL, SC, NC — split into three territories:
   1. FL  2. AL & GA  3. N/S Carolina
-- **Central** — TN, TX, LA, MS, OK, AR, IL, IN, KY, OH, MI, WI
+- **Central** — TN, TX, LA, MS, OK, AR, IL, IN, KY, OH, MI, WI — split into six
+  territories:
+  1. S. Texas (Austin and south)  2. N. Texas + OK  3. LA, MS & AR
+  4. TN & KY  5. OH & MI  6. IL, IN & WI
 - **Northeast** — ME, NH, VT, MA, RI, CT, NY, NJ, PA, DE, MD, VA, WV (+ DC)
 - **Great Plains** — UT, CO, NE, WY, MT, SD, ND, MN, IA, KS, MO
 - **West** — AK, WA, OR, ID, CA, NV, AZ, NM, HI
 
 A region can be broken into sub-territories (`subs` in `src/build-future.mjs`,
-which must partition the region or the build fails). They render as tonal bands
+which must partition the region or the build fails). A territory can also take
+part of a state: `partial` clips the state at a parallel (Texas is cut along
+Austin's latitude), and the build checks the clipped area to catch the
+ring-winding mistake that would otherwise render the piece inside-out. They render as tonal bands
 with dashed dividers, numbered on the card and — once you click into the region
 — on the map.
 
