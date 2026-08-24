@@ -20,37 +20,43 @@ const nationPath = path(nationF);
 
 // Austin, TX sits on the parallel that splits the two Texas territories.
 const AUSTIN_LAT = 30.2672;
+// California is cut twice: at Long Beach, and at San Luis Obispo.
+const LONG_BEACH_LAT = 33.7701;
+const SLO_LAT = 35.2828;
+// Nevada is cut just north of Las Vegas, close to the Clark County line.
+const VEGAS_LINE_LAT = 37.0;
 
 // Everything is normalised to MultiPolygon rings so whole states and clipped
 // pieces of a state can be concatenated into one geometry.
 const toRings = g => g.type === 'Polygon' ? [g.coordinates] : g.coordinates;
 const multi = rings => ({ type: 'MultiPolygon', coordinates: rings });
 
-// Clip a state to one side of a parallel. The cutting edge is densified so it
-// projects as the curve a parallel actually is, not a straight chord.
-function clipToLat(stateFeature, lat, side) {
-  const [[w, sLat], [e, nLat]] = [[-180, -90], [180, 90]];
-  const box = side === 'south' ? [sLat, lat] : [lat, nLat];
-  const [lo, hi] = box;
-  const edge = [];
-  for (let x = w; x <= e; x += 0.05) edge.push([+x.toFixed(3), lat]);
-  const rect = side === 'south'
-    ? [[[w, lo], ...edge, [e, lo], [w, lo]]]
-    : [[[w, hi], [e, hi], ...edge.slice().reverse(), [w, hi]]];
-  const out = polygonClipping.intersection(toRings(stateFeature.geometry), rect);
-  if (!out.length) throw new Error(`clip produced nothing for ${stateFeature.properties.name}`);
+// Clip a state to a latitude band (either bound may be omitted). The cutting
+// edges are densified so they project as the curves parallels actually are,
+// not straight chords.
+function clipToBand(stateFeature, { latMin = -90, latMax = 90 }) {
+  const [w, e] = [-180, 180];
+  const along = lat => {
+    const pts = [];
+    for (let x = w; x <= e; x += 0.05) pts.push([+x.toFixed(3), lat]);
+    return pts;
+  };
+  const ring = [...along(latMin), ...along(latMax).reverse(), [w, latMin]];
+  const out = polygonClipping.intersection(toRings(stateFeature.geometry), [ring]);
+  const label = `${stateFeature.properties.name} [${latMin}, ${latMax}]`;
+  if (!out.length) throw new Error(`clip produced nothing for ${label}`);
   // polygon-clipping winds rings the opposite way from what d3-geo's spherical
   // clipping expects; left as-is, a clipped piece renders as the whole globe
   // minus that piece. Reversing every ring keeps holes consistent too.
-  const rings = out.map(poly => poly.map(ring => ring.slice().reverse()));
+  const rings = out.map(poly => poly.map(r => r.slice().reverse()));
   const area = geoArea(multi(rings));
   if (!(area > 0) || area >= geoArea(stateFeature)) {
-    throw new Error(`clip of ${stateFeature.properties.name} (${side}) has area ${area} — check ring winding`);
+    throw new Error(`clip of ${label} has area ${area} — check ring winding`);
   }
   return rings;
 }
 
-// The cut itself, as the run(s) of the parallel that fall inside the state.
+// A cut, as the run(s) of a parallel that fall inside the state.
 function cutLine(stateFeature, lat) {
   const lines = [];
   let run = null;
@@ -60,6 +66,27 @@ function cutLine(stateFeature, lat) {
     else if (run) { if (run.length > 1) lines.push(run); run = null; }
   }
   if (run && run.length > 1) lines.push(run);
+  return lines;
+}
+
+// Where two split states meet, only part of their shared border divides two
+// territories. Take the state-to-state border and keep the run(s) inside a
+// latitude band.
+function partialBorder([a, b], { latMin = -90, latMax = 90 }) {
+  const pair = g => g.properties.name === a || g.properties.name === b;
+  const m = mesh(topo, topo.objects.states, (x, y) =>
+    pair(x) && pair(y) && x.properties.name !== y.properties.name);
+  const src = m.type === 'LineString' ? [m.coordinates] : m.coordinates;
+  const lines = [];
+  for (const line of src) {
+    let run = null;
+    for (const pt of line) {
+      if (pt[1] >= latMin && pt[1] <= latMax) { (run ||= []).push(pt); }
+      else if (run) { if (run.length > 1) lines.push(run); run = null; }
+    }
+    if (run && run.length > 1) lines.push(run);
+  }
+  if (!lines.length) throw new Error(`no border found between ${a} and ${b} in band`);
   return lines;
 }
 
@@ -84,9 +111,10 @@ const REGIONS = [
     label: ['Illinois', 'Kentucky'],
     subs: [
       // Texas is cut along Austin's parallel: "Austin and south" is territory 1.
-      { name: 'S. Texas', states: [], partial: [{ state: 'Texas', side: 'south', lat: AUSTIN_LAT }] },
+      { name: 'S. Texas', states: [],
+        partial: [{ state: 'Texas', latMax: AUSTIN_LAT, chip: 'TX (S)' }] },
       { name: 'N. Texas + OK', states: ['Oklahoma'], owns: ['Texas'],
-        partial: [{ state: 'Texas', side: 'north', lat: AUSTIN_LAT }] },
+        partial: [{ state: 'Texas', latMin: AUSTIN_LAT, chip: 'TX (N)' }] },
       { name: 'LA, MS & AR', states: ['Louisiana', 'Mississippi', 'Arkansas'] },
       { name: 'TN & KY', states: ['Tennessee', 'Kentucky'] },
       { name: 'OH & MI', states: ['Ohio', 'Michigan'] },
@@ -99,6 +127,16 @@ const REGIONS = [
              'New York', 'New Jersey', 'Pennsylvania', 'Delaware', 'Maryland', 'Virginia',
              'West Virginia', 'District of Columbia'],
     label: ['Pennsylvania', 'New York'],
+    subs: [
+      { name: 'New England', states: ['Maine', 'New Hampshire', 'Vermont', 'Massachusetts',
+                                      'Connecticut', 'Rhode Island'] },
+      // DE, MD and DC weren't in the brief's three groups; they sit with PA and
+      // the Virginias, the only block they're contiguous with.
+      { name: 'PA, MD, DE & the Virginias',
+        states: ['Pennsylvania', 'Maryland', 'Delaware', 'Virginia', 'West Virginia',
+                 'District of Columbia'] },
+      { name: 'NY & NJ', states: ['New York', 'New Jersey'] },
+    ],
     candidates: [{ name: 'Rich Cialella', role: 'Regional Business Director' }],
   },
   {
@@ -106,12 +144,36 @@ const REGIONS = [
     states: ['Utah', 'Colorado', 'Nebraska', 'Wyoming', 'Montana', 'South Dakota', 'North Dakota',
              'Minnesota', 'Iowa', 'Kansas', 'Missouri'],
     label: ['Nebraska', 'South Dakota', 'Kansas'],
+    subs: [
+      { name: 'KS & MO', states: ['Kansas', 'Missouri'] },
+      // Montana wasn't in the brief's three groups; it joins the mountain block
+      // it borders rather than the plains tier.
+      { name: 'CO, UT, WY & MT', states: ['Colorado', 'Utah', 'Wyoming', 'Montana'] },
+      { name: 'NE, Dakotas, MN & IA',
+        states: ['Nebraska', 'North Dakota', 'South Dakota', 'Minnesota', 'Iowa'] },
+    ],
   },
   {
     key: 'west', name: 'West', color: '#17aec9',
     states: ['Alaska', 'Washington', 'Oregon', 'Idaho', 'California', 'Nevada', 'Arizona',
              'New Mexico', 'Hawaii'],
     label: ['Nevada', 'Oregon', 'Idaho'],
+    subs: [
+      { name: 'SoCal + Vegas + HI', states: ['Hawaii'],
+        partial: [{ state: 'California', latMax: LONG_BEACH_LAT, chip: 'CA (San Diego–Long Beach)' },
+                  { state: 'Nevada', latMax: VEGAS_LINE_LAT, chip: 'NV (Vegas)' }] },
+      { name: 'LA to San Luis Obispo', states: [],
+        partial: [{ state: 'California', latMin: LONG_BEACH_LAT, latMax: SLO_LAT,
+                    chip: 'CA (LA–SLO)' }] },
+      { name: 'N. California + NV', states: [], owns: ['California', 'Nevada'],
+        partial: [{ state: 'California', latMin: SLO_LAT, chip: 'CA (N)' },
+                  { state: 'Nevada', latMin: VEGAS_LINE_LAT, chip: 'NV (N)' }] },
+      { name: 'AZ & NM', states: ['Arizona', 'New Mexico'] },
+      { name: 'AK, WA, OR & ID', states: ['Alaska', 'Washington', 'Oregon', 'Idaho'] },
+    ],
+    // North of the Vegas line, California and Nevada are the same territory, so
+    // only the southern run of their shared border is a divider.
+    extraDividers: [{ between: ['California', 'Nevada'], latMax: VEGAS_LINE_LAT }],
   },
 ];
 
@@ -158,14 +220,16 @@ const regions = REGIONS.map(r => {
     subs: (r.subs || []).map(t => {
       const rings = [
         ...(t.states.length ? toRings(merge(topo, geomsFor(t.states))) : []),
-        ...(t.partial || []).flatMap(q => clipToLat(featureByName(q.state), q.lat, q.side)),
+        ...(t.partial || []).flatMap(q => clipToBand(featureByName(q.state), q)),
       ];
       const geom = multi(rings);
-      const c2 = path.centroid(geom);
+      const biggest = rings.map(poly => ({ poly, a: Math.abs(path.area({ type: 'Polygon', coordinates: poly })) }))
+        .sort((m, n) => n.a - m.a)[0].poly;
+      const c2 = path.centroid({ type: 'Polygon', coordinates: biggest });
       return {
         name: t.name,
         states: t.states,
-        partial: (t.partial || []).map(q => ({ state: q.state, side: q.side })),
+        partial: (t.partial || []).map(q => ({ state: q.state, chip: q.chip })),
         d: path(geom),
         x: +c2[0].toFixed(1), y: +c2[1].toFixed(1),
       };
@@ -183,10 +247,18 @@ const regionBorderPath = path(mesh(topo, topo.objects.states, (a, b) => regionOf
 // Interior lines that split a region into sub-territories (region borders are separate)
 const subMeshPath = path(mesh(topo, topo.objects.states, (a, b) =>
   regionOf(a) === regionOf(b) && subByStateName[a.properties.name] !== subByStateName[b.properties.name]));
-const cutPaths = REGIONS.flatMap(r => (r.subs || []).flatMap(t => (t.partial || [])))
-  .filter((q, i, all) => all.findIndex(o => o.state === q.state && o.lat === q.lat) === i)
-  .map(q => path({ type: 'MultiLineString', coordinates: cutLine(featureByName(q.state), q.lat) }));
-const subBorderPath = [subMeshPath, ...cutPaths].filter(Boolean).join(' ');
+const cuts = [];
+for (const r of REGIONS) for (const t of r.subs || []) for (const q of t.partial || []) {
+  for (const lat of [q.latMin, q.latMax]) {
+    if (lat === undefined) continue;
+    if (!cuts.some(c => c.state === q.state && c.lat === lat)) cuts.push({ state: q.state, lat });
+  }
+}
+const cutPaths = cuts.map(c =>
+  path({ type: 'MultiLineString', coordinates: cutLine(featureByName(c.state), c.lat) }));
+const extraPaths = REGIONS.flatMap(r => r.extraDividers || [])
+  .map(x => path({ type: 'MultiLineString', coordinates: partialBorder(x.between, x) }));
+const subBorderPath = [subMeshPath, ...cutPaths, ...extraPaths].filter(Boolean).join(' ');
 
 // ---- Current people, bucketed into the proposed regions ----
 // Same roster as build.mjs; the state is derived from the plotted coordinate so

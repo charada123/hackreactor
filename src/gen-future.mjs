@@ -10,6 +10,7 @@ const ABBR = {
   'North Dakota':'ND',Ohio:'OH',Oklahoma:'OK',Oregon:'OR',Pennsylvania:'PA','Rhode Island':'RI',
   'South Carolina':'SC','South Dakota':'SD',Tennessee:'TN',Texas:'TX',Utah:'UT',Vermont:'VT',
   Virginia:'VA',Washington:'WA','West Virginia':'WV',Wisconsin:'WI',Wyoming:'WY',
+  'District of Columbia':'DC',
 };
 
 // Tonal ramp across a region's territories. Adjacent list positions are pushed
@@ -18,13 +19,13 @@ function shade(i, n) {
   if (n < 2) return 1;
   const half = Math.ceil(n / 2);
   const order = i % 2 === 0 ? i / 2 : half + (i - 1) / 2;
-  return +(0.6 + (1.4 - 0.6) * (order / (n - 1))).toFixed(3);
+  return +(0.62 + (1.85 - 0.62) * (order / (n - 1))).toFixed(3);
 }
 
 // A territory's chips: whole states, plus split states marked (S)/(N).
 const chipsFor = t => [
   ...t.states.map(st => ABBR[st] || st),
-  ...(t.partial || []).map(q => `${ABBR[q.state] || q.state} (${q.side === 'south' ? 'S' : 'N'})`),
+  ...(t.partial || []).map(q => q.chip || ABBR[q.state] || q.state),
 ];
 
 const regions = d.regions.map(r => ({

@@ -27,9 +27,19 @@ planning. Reachable from the link in the header of the main map.
   territories:
   1. S. Texas (Austin and south)  2. N. Texas + OK  3. LA, MS & AR
   4. TN & KY  5. OH & MI  6. IL, IN & WI
-- **Northeast** — ME, NH, VT, MA, RI, CT, NY, NJ, PA, DE, MD, VA, WV (+ DC)
-- **Great Plains** — UT, CO, NE, WY, MT, SD, ND, MN, IA, KS, MO
-- **West** — AK, WA, OR, ID, CA, NV, AZ, NM, HI
+- **Northeast** — ME, NH, VT, MA, RI, CT, NY, NJ, PA, DE, MD, VA, WV (+ DC) —
+  three territories:
+  1. New England  2. PA, MD, DE & the Virginias  3. NY & NJ
+- **Great Plains** — UT, CO, NE, WY, MT, SD, ND, MN, IA, KS, MO — three
+  territories:
+  1. KS & MO  2. CO, UT, WY & MT  3. NE, Dakotas, MN & IA
+- **West** — AK, WA, OR, ID, CA, NV, AZ, NM, HI — five territories:
+  1. SoCal (San Diego–Long Beach) + Vegas + HI  2. LA to San Luis Obispo
+  3. N. California + the rest of NV  4. AZ & NM  5. AK, WA, OR & ID
+
+Three states are cut mid-state: Texas at Austin's parallel, California at Long
+Beach and again at San Luis Obispo, and Nevada just north of Las Vegas (close to
+the Clark County line).
 
 A region can be broken into sub-territories (`subs` in `src/build-future.mjs`,
 which must partition the region or the build fails). A territory can also take
