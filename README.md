@@ -22,9 +22,9 @@ A second page proposing a five-region split of the country, for territory
 planning. Reachable from the link in the header of the main map.
 
 - **Southeast** — FL, GA, AL, SC, NC
-- **Central** — TN, TX, LA, MS, OK, AR, KS, MO, IL, IN, KY, OH, MI, WI
+- **Central** — TN, TX, LA, MS, OK, AR, IL, IN, KY, OH, MI, WI
 - **Northeast** — ME, NH, VT, MA, RI, CT, NY, NJ, PA, DE, MD, VA, WV (+ DC)
-- **Great Plains** — UT, CO, NE, WY, MT, SD, ND, MN, IA
+- **Great Plains** — UT, CO, NE, WY, MT, SD, ND, MN, IA, KS, MO
 - **West** — AK, WA, OR, ID, CA, NV, AZ, NM, HI
 
 All 50 states land in exactly one region (the build fails if that ever stops

@@ -28,9 +28,9 @@ const REGIONS = [
   },
   {
     key: 'central', name: 'Central', color: '#2f9e44',
-    states: ['Tennessee', 'Texas', 'Louisiana', 'Mississippi', 'Oklahoma', 'Arkansas', 'Kansas',
-             'Missouri', 'Illinois', 'Indiana', 'Kentucky', 'Ohio', 'Michigan', 'Wisconsin'],
-    label: ['Missouri', 'Illinois', 'Kentucky'],
+    states: ['Tennessee', 'Texas', 'Louisiana', 'Mississippi', 'Oklahoma', 'Arkansas',
+             'Illinois', 'Indiana', 'Kentucky', 'Ohio', 'Michigan', 'Wisconsin'],
+    label: ['Illinois', 'Kentucky'],
   },
   {
     key: 'northeast', name: 'Northeast', color: '#7a6ff0',
@@ -42,8 +42,8 @@ const REGIONS = [
   {
     key: 'plains', name: 'Great Plains', color: '#d9932b',
     states: ['Utah', 'Colorado', 'Nebraska', 'Wyoming', 'Montana', 'South Dakota', 'North Dakota',
-             'Minnesota', 'Iowa'],
-    label: ['South Dakota', 'Nebraska', 'Wyoming'],
+             'Minnesota', 'Iowa', 'Kansas', 'Missouri'],
+    label: ['Nebraska', 'South Dakota', 'Kansas'],
   },
   {
     key: 'west', name: 'West', color: '#17aec9',
