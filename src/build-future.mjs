@@ -38,6 +38,7 @@ const REGIONS = [
              'New York', 'New Jersey', 'Pennsylvania', 'Delaware', 'Maryland', 'Virginia',
              'West Virginia', 'District of Columbia'],
     label: ['Pennsylvania', 'New York'],
+    candidates: [{ name: 'Rich Cialella', role: 'Regional Business Director' }],
   },
   {
     key: 'plains', name: 'Great Plains', color: '#d9932b',
@@ -74,7 +75,7 @@ const regions = REGIONS.map(r => {
   const merged = merge(topo, geomsFor(r.states));
   const c = path.centroid(merge(topo, geomsFor(r.label || r.states)));
   return {
-    key: r.key, name: r.name, color: r.color,
+    key: r.key, name: r.name, color: r.color, candidates: r.candidates || [],
     states: r.states.filter(s => s !== 'District of Columbia'),
     hasDC: r.states.includes('District of Columbia'),
     d: path({ type: 'Feature', geometry: merged }),
@@ -127,5 +128,5 @@ writeFileSync(new URL('./futuredata.json', import.meta.url), JSON.stringify({
   W, H, statePaths, borderPath, nationPath, regions, regionBorderPath, reps: placed,
 }, null, 0));
 
-console.log('regions:', regions.map(r => `${r.name} (${r.states.length})`).join(', '));
+console.log('regions:', regions.map(r => `${r.name} (${r.states.length})${r.candidates.length ? ' candidate: ' + r.candidates.map(c => c.name + ' (' + c.role + ')').join(', ') : ''}`).join(', '));
 console.log('people:', placed.map(p => `${p.name} -> ${p.state} / ${p.region}`).join('\n'));

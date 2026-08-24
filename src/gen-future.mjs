@@ -121,6 +121,11 @@ const html = `<title>Future Consideration Territories</title>
   .rpeople .pd.team{background:var(--team)} .rpeople .pd.direct{background:var(--direct)}
   .rpeople .pd.prospect{background:transparent;border:2px solid var(--prospect)}
   .rnone{margin-top:8px;font-size:11.5px;color:var(--faint);font-style:italic;}
+  .rcand{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line-strong);display:flex;
+    align-items:baseline;gap:7px;flex-wrap:wrap;font-size:11.5px;}
+  .rcand .lbl{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);}
+  .rcand .cn{font-weight:650;color:var(--ink);}
+  .rcand .cr{color:var(--muted);}
   .empty{padding:24px 14px;color:var(--faint);font-size:13px;text-align:center;}
 
   /* Map */
@@ -146,6 +151,9 @@ const html = `<title>Future Consideration Territories</title>
   .rlabel{fill:var(--ink);font:750 13px var(--sans);text-anchor:middle;dominant-baseline:central;pointer-events:none;
     paint-order:stroke;stroke:var(--panel);stroke-width:3.6px;stroke-linejoin:round;letter-spacing:.02em;}
   .rlabel.dim{opacity:.3;}
+  .rsub{fill:var(--ink);font:650 10px var(--sans);text-anchor:middle;dominant-baseline:central;pointer-events:none;
+    paint-order:stroke;stroke:var(--panel);stroke-width:3.2px;stroke-linejoin:round;opacity:.75;}
+  .rsub.dim{opacity:.25;}
 
   .pin{pointer-events:none;}
   .pin .core{stroke:var(--panel);stroke-width:2;}
@@ -210,7 +218,8 @@ const html = `<title>Future Consideration Territories</title>
           <path class="nation" d="${d.nationPath}"></path>
           <g id="pins"></g>
           <g id="rlabels">
-            ${regions.map(r => `<text class="rlabel" data-key="${r.key}" x="${r.x}" y="${r.y}">${r.name}</text>`).join('')}
+            ${regions.map(r => `<text class="rlabel" data-key="${r.key}" x="${r.x}" y="${r.y}">${r.name}</text>` +
+              r.candidates.map((c, i) => `<text class="rsub" data-key="${r.key}" x="${r.x}" y="${r.y + 15 + i * 12}">${c.name}</text>`).join('')).join('')}
           </g>
         </g>
       </svg>
@@ -225,7 +234,7 @@ const html = `<title>Future Consideration Territories</title>
 </div>
 
 <script>
-const REGIONS = ${JSON.stringify(regions.map(r => ({ key: r.key, name: r.name, color: r.color, abbrs: r.abbrs, countLabel: r.countLabel, states: r.states })))};
+const REGIONS = ${JSON.stringify(regions.map(r => ({ key: r.key, name: r.name, color: r.color, abbrs: r.abbrs, countLabel: r.countLabel, states: r.states, candidates: r.candidates })))};
 const PEOPLE = ${JSON.stringify(d.reps.map(r => ({ name: r.name, city: r.city, role: r.role, group: r.group, state: r.state, region: r.region, x: r.x, y: r.y })))};
 const W=${d.W}, H=${d.H};
 
@@ -250,7 +259,9 @@ REGIONS.forEach(r => {
      <div class="abbrs">\${r.abbrs.map(a=>\`<span class="ab">\${a}</span>\`).join('')}</div>\` +
     (who.length
       ? \`<div class="rpeople">\${who.map(p=>\`<span class="pn"><span class="pd \${p.group}"></span>\${p.name}</span>\`).join('')}</div>\`
-      : \`<div class="rnone">No one on the map here yet.</div>\`);
+      : \`<div class="rnone">No one on the map here yet.</div>\`) +
+    r.candidates.map(c=>\`<div class="rcand"><span class="lbl">Under consideration</span>
+       <span class="cn">\${c.name}</span><span class="cr">\${c.role}</span></div>\`).join('');
   li.addEventListener('click', () => select(r.key));
   li.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){e.preventDefault();select(r.key);} });
   listEl.appendChild(li);
@@ -274,7 +285,8 @@ function showTip(key, evt){
   tip.style.left = (evt.clientX - wr.left) + 'px';
   tip.style.top = (evt.clientY - wr.top - 6) + 'px';
   tip.innerHTML = \`<div class="tn">\${r.name}</div><div>\${r.countLabel} · \${r.abbrs.join(' ')}</div>\` +
-    \`<div class="tr">\${who.length ? who.length + ' on the map today' : 'No coverage on the map today'}</div>\`;
+    \`<div class="tr">\${who.length ? who.length + ' on the map today' : 'No coverage on the map today'}</div>\` +
+    r.candidates.map(c=>\`<div class="tr">Under consideration: \${c.name} · \${c.role}</div>\`).join('');
   tip.style.opacity = 1;
 }
 function hideTip(){ tip.style.opacity = 0; }
@@ -287,7 +299,7 @@ function select(key){
     p.classList.toggle('active', p.dataset.key===active);
     p.classList.toggle('dim', active!==null && p.dataset.key!==active);
   });
-  document.querySelectorAll('.rlabel').forEach(t=>t.classList.toggle('dim', active!==null && t.dataset.key!==active));
+  document.querySelectorAll('.rlabel,.rsub').forEach(t=>t.classList.toggle('dim', active!==null && t.dataset.key!==active));
   document.querySelectorAll('.pin').forEach(g=>g.classList.toggle('dim', active!==null && g.dataset.region!==active));
   if(active === null){ resetView(); return; }
   const el = document.querySelector(\`.rfill[data-key="\${active}"]\`);
@@ -315,7 +327,8 @@ document.getElementById('q').addEventListener('input', e=>{
   const q = (e.target.value||'').toLowerCase().trim();
   let shown = 0;
   REGIONS.forEach(r=>{
-    const hay = (r.name+' '+r.states.join(' ')+' '+r.abbrs.join(' ')).toLowerCase();
+    const hay = (r.name+' '+r.states.join(' ')+' '+r.abbrs.join(' ')+' '+
+      r.candidates.map(c=>c.name+' '+c.role).join(' ')).toLowerCase();
     const vis = !q || hay.includes(q);
     listEl.querySelector(\`.rcard[data-key="\${r.key}"]\`).classList.toggle('hidden', !vis);
     if(vis) shown++;

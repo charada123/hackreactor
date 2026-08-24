@@ -27,6 +27,10 @@ planning. Reachable from the link in the header of the main map.
 - **Great Plains** — UT, CO, NE, WY, MT, SD, ND, MN, IA, KS, MO
 - **West** — AK, WA, OR, ID, CA, NV, AZ, NM, HI
 
+Named candidates under consideration for a region (currently Rich Cialella,
+Regional Business Director, for the Northeast) show on the region's card and
+under its name on the map.
+
 All 50 states land in exactly one region (the build fails if that ever stops
 being true). Click a region to zoom in; each region card lists its states and
 the people already plotted inside it.
