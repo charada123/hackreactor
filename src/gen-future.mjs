@@ -62,6 +62,18 @@ function colourTerritories(ids, adjacency) {
   return chosen;
 }
 
+// The region name is now the main thing carrying region identity, since the
+// fills belong to individual territories. Give each one its region's colour,
+// darkened for the light theme and lightened for the dark one so it stays
+// legible against the panel-coloured halo.
+const mix = (hex, to, amt) => {
+  const c = i => parseInt(hex.slice(1 + i * 2, 3 + i * 2), 16);
+  const t = i => parseInt(to.slice(1 + i * 2, 3 + i * 2), 16);
+  return '#' + [0, 1, 2].map(i =>
+    Math.round(c(i) + (t(i) - c(i)) * amt).toString(16).padStart(2, '0')).join('');
+};
+const labelColors = r => ({ light: mix(r.color, '#000000', 0.28), dark: mix(r.color, '#ffffff', 0.34) });
+
 const TERRITORY_IDS = d.regions.flatMap(r => r.subs.map((_, i) => `${r.key}:${i}`));
 const TERRITORY_COLOR = colourTerritories(TERRITORY_IDS, d.adjacency || []);
 
@@ -73,6 +85,7 @@ const chipsFor = t => [
 
 const regions = d.regions.map(r => ({
   ...r,
+  labelColor: labelColors(r),
   subs: r.subs.map((t, i) => ({ ...t, color: TERRITORY_COLOR.get(`${r.key}:${i}`).hex })),
   abbrs: r.states.map(s => ABBR[s] || s).concat(r.hasDC ? ['DC'] : []),
   countLabel: `${r.states.length} states${r.hasDC ? ' + DC' : ''}`,
@@ -282,7 +295,10 @@ const html = `<title>Territory Map</title>
   .rcard.hidden{display:none;}
   .rtop{display:flex;align-items:center;gap:9px;}
   .swatch{width:11px;height:11px;border-radius:3px;flex:none;}
-  .rname{font-weight:700;font-size:14.5px;letter-spacing:-.01em;}
+  .rname{font-weight:700;font-size:14.5px;letter-spacing:-.01em;color:var(--c,var(--ink));}
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .rname{color:var(--cd,var(--ink));} }
+  :root[data-theme="dark"] .rname{color:var(--cd,var(--ink));}
+  :root[data-theme="light"] .rname{color:var(--c,var(--ink));}
   .rcount{margin-left:auto;font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;
     font-variant-numeric:tabular-nums;}
   .abbrs{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;}
@@ -332,10 +348,13 @@ const html = `<title>Territory Map</title>
   .snum.show{opacity:.9;}
   .rborder{fill:none;stroke:var(--ink);stroke-opacity:.62;stroke-width:2.4;vector-effect:non-scaling-stroke;
     stroke-linejoin:round;pointer-events:none;}
-  .rlabel{fill:var(--ink);font:750 17px var(--sans);text-anchor:middle;dominant-baseline:central;pointer-events:none;
+  .rlabel{fill:var(--c,var(--ink));font:750 17px var(--sans);text-anchor:middle;dominant-baseline:central;pointer-events:none;
     paint-order:stroke;stroke:var(--panel);stroke-width:4.6px;stroke-linejoin:round;letter-spacing:.02em;}
   .rlabel.dim{opacity:.3;}
   .rlabel.hide{opacity:0;}
+  @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .rlabel{fill:var(--cd,var(--ink));} }
+  :root[data-theme="dark"] .rlabel{fill:var(--cd,var(--ink));}
+  :root[data-theme="light"] .rlabel{fill:var(--c,var(--ink));}
 
   /* Each role gets its own shape as well as its own colour, so the map still
      reads when printed or seen by someone who can't separate the hues. */
@@ -424,7 +443,8 @@ const html = `<title>Territory Map</title>
           <path class="nation" d="${d.nationPath}"></path>
           <g id="pins"></g>
           <g id="rlabels">
-            ${regions.map(r => `<text class="rlabel" data-key="${r.key}" x="${r.x}" y="${r.y}">${r.name}</text>`).join('')}
+            ${regions.map(r => `<text class="rlabel" data-key="${r.key}" x="${r.x}" y="${r.y}" ` +
+              `style="--c:${r.labelColor.light};--cd:${r.labelColor.dark}">${r.name}</text>`).join('')}
             ${regions.flatMap(r => r.subs.map((t, i) =>
               `<text class="snum" data-key="${r.key}" x="${t.x}" y="${t.y}">${i + 1}</text>`)).join('')}
           </g>
@@ -453,7 +473,7 @@ const html = `<title>Territory Map</title>
 const ABBR = ${JSON.stringify(ABBR)};
 const MARKER = ${JSON.stringify(MARKER)};
 const GROUP_LABEL = ${JSON.stringify(Object.fromEntries(GROUPS.map(g => [g.key, g.label])))};
-const REGIONS = ${JSON.stringify(regions.map(r => ({ key: r.key, name: r.name, color: r.color, abbrs: r.abbrs, countLabel: r.countLabel, states: r.states, candidates: r.candidates, subs: r.subs.map(t => ({ name: t.name, states: t.states, chips: chipsFor(t), color: t.color })) })))};
+const REGIONS = ${JSON.stringify(regions.map(r => ({ key: r.key, name: r.name, color: r.color, labelColor: r.labelColor, abbrs: r.abbrs, countLabel: r.countLabel, states: r.states, candidates: r.candidates, subs: r.subs.map(t => ({ name: t.name, states: t.states, chips: chipsFor(t), color: t.color })) })))};
 const PEOPLE = ${JSON.stringify(d.reps.map((r, i) => ({ name: r.name, city: r.city, role: r.role, group: DISPLAY_GROUP[r.group], state: r.state, region: r.region, x: r.x, y: r.y,
   count: r.group === 'team' ? 4 : 1, lab: LABELS[i] })))};
 const W=${d.W}, H=${d.H};
@@ -482,7 +502,7 @@ REGIONS.forEach(r => {
   li.className = 'rcard'; li.dataset.key = r.key; li.tabIndex = 0;
   li.innerHTML =
     \`<div class="rtop"><span class="swatch" style="\${swatchStyle(r)}"></span>
-       <span class="rname">\${r.name}</span>
+       <span class="rname" style="--c:\${r.labelColor.light};--cd:\${r.labelColor.dark}">\${r.name}</span>
        <span class="rcount">\${r.countLabel}</span></div>
      \${r.subs.length
        ? \`<div class="subs">\${r.subs.map((t,i)=>\`<div class="sub">
