@@ -34,8 +34,25 @@ const regions = d.regions.map(r => ({
   countLabel: `${r.states.length} states${r.hasDC ? ' + DC' : ''}`,
 }));
 const stateTotal = regions.reduce((n, r) => n + r.states.length, 0);
+const territoryTotal = regions.reduce((n, r) => n + (r.subs.length || 1), 0);
 
-const html = `<title>Future Consideration Territories</title>
+// Role marker: shape first, colour second.
+const GROUPS = [
+  { key: 'direct', label: 'Direct rep' },
+  { key: 'field', label: 'Indirect rep' },
+  { key: 'trainer', label: 'Trainer' },
+  { key: 'team', label: 'Partner team' },
+  { key: 'prospect', label: 'Future consideration' },
+];
+const MARKER = {
+  direct: '<circle class="core" r="6.5"></circle>',
+  field: '<rect class="core" x="-6" y="-6" width="12" height="12" rx="2.5"></rect>',
+  trainer: '<path class="core" d="M0,-7.6 L7.6,0 L0,7.6 L-7.6,0 Z"></path>',
+  team: '<circle class="core" r="6.5"></circle>',
+  prospect: '<circle class="core" r="7"></circle>',
+};
+
+const html = `<title>Territory Map</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   :root{
@@ -132,10 +149,12 @@ const html = `<title>Future Consideration Territories</title>
     border:1px solid var(--line);border-radius:6px;padding:2px 6px;letter-spacing:.02em;}
   .rpeople{margin-top:8px;font-size:11.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 8px;}
   .rpeople .pn{display:inline-flex;align-items:center;gap:5px;}
-  .rpeople .pd{width:7px;height:7px;border-radius:50%;flex:none;}
-  .rpeople .pd.field{background:var(--field)} .rpeople .pd.trainer{background:var(--trainer)}
-  .rpeople .pd.team{background:var(--team)} .rpeople .pd.direct{background:var(--direct)}
-  .rpeople .pd.prospect{background:transparent;border:2px solid var(--prospect)}
+  .rpeople .pd{width:8px;height:8px;flex:none;}
+  .rpeople .pd.direct{background:var(--direct);border-radius:50%}
+  .rpeople .pd.field{background:var(--field);border-radius:2px}
+  .rpeople .pd.trainer{background:var(--trainer);transform:rotate(45deg)}
+  .rpeople .pd.team{background:var(--team);border-radius:50%}
+  .rpeople .pd.prospect{background:transparent;border:1.5px dashed var(--prospect);border-radius:50%}
   .rnone{margin-top:8px;font-size:11.5px;color:var(--faint);font-style:italic;}
   .subs{margin-top:8px;display:flex;flex-direction:column;gap:6px;}
   .sub{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
@@ -152,7 +171,7 @@ const html = `<title>Future Consideration Territories</title>
 
   /* Map */
   .mapwrap{position:relative;overflow:hidden;border-radius:var(--radius);}
-  .mapwrap svg{display:block;width:100%;height:auto;background:linear-gradient(180deg,var(--panel),var(--panel-2));}
+  .mapwrap > svg{display:block;width:100%;height:auto;background:linear-gradient(180deg,var(--panel),var(--panel-2));}
   .mapctl{position:absolute;top:12px;right:12px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
   .mapctl button{font:inherit;font-size:12px;font-weight:600;color:var(--muted);background:var(--panel);
     border:1px solid var(--line-strong);border-radius:9px;padding:6px 11px;cursor:pointer;box-shadow:var(--shadow);}
@@ -179,12 +198,28 @@ const html = `<title>Future Consideration Territories</title>
   .rlabel.dim{opacity:.3;}
   .rlabel.hide{opacity:0;}
 
-  .pin{pointer-events:none;}
-  .pin .core{stroke:var(--panel);stroke-width:2;}
+  /* Each role gets its own shape as well as its own colour, so the map still
+     reads when printed or seen by someone who can't separate the hues. */
+  .pin{cursor:pointer;}
+  .pin .core{stroke:var(--panel);stroke-width:1.8;}
   .pin.field .core{fill:var(--field)} .pin.trainer .core{fill:var(--trainer)} .pin.team .core{fill:var(--team)}
   .pin.direct .core{fill:var(--direct)}
-  .pin.prospect .core{fill:var(--panel);stroke:var(--prospect);stroke-width:2.5}
-  .pin.dim{opacity:.16;}
+  .pin.prospect .core{fill:var(--panel);stroke:var(--prospect);stroke-width:2.4;stroke-dasharray:3.4 2.6;}
+  .pin .badge{fill:var(--panel);stroke:var(--team);stroke-width:1.2;}
+  .pin .badgetx{font:700 8px var(--sans);fill:var(--ink);text-anchor:middle;dominant-baseline:central;}
+  .pin.dim{opacity:.15;}
+  .pin.off{display:none;}
+  .pin:hover .core{stroke:var(--ink);}
+
+  .maplegend{display:flex;flex-wrap:wrap;gap:6px;padding:11px 12px;border-top:1px solid var(--line);}
+  .lg{display:inline-flex;align-items:center;gap:7px;padding:5px 10px;border-radius:20px;
+    border:1px solid var(--line-strong);background:var(--panel-2);font:inherit;font-size:12px;
+    color:var(--muted);cursor:pointer;user-select:none;transition:.15s;}
+  .lg:hover{border-color:var(--accent);color:var(--ink);}
+  .lg[aria-pressed="false"]{opacity:.42;}
+  .lg svg{display:block;flex:none;overflow:visible;}
+  .lg .pin{cursor:inherit;}
+  .lg .n{font-variant-numeric:tabular-nums;color:var(--faint);}
 
   .tip{position:absolute;pointer-events:none;opacity:0;transform:translate(-50%,-118%);transition:opacity .12s;
     background:var(--ink);color:var(--panel);padding:8px 11px;border-radius:9px;font-size:12px;max-width:240px;
@@ -204,19 +239,20 @@ const html = `<title>Future Consideration Territories</title>
   <header class="head">
     <div class="brand">
       <span class="eyebrow">Territory planning · Draft</span>
-      <h1>Future Consideration Territories</h1>
-      <span class="sub">A proposed five-region split of the country. Click a region to zoom in and see its states and who is already there.</span>
+      <h1>Territory Map</h1>
+      <span class="sub">A proposed five-region split of the country with the sales team plotted on it. Click a region to zoom in and see its territories.</span>
     </div>
     <div class="head-meta">
       <div class="stat"><b>${regions.length}</b><span>Regions</span></div>
       <div class="stat"><b>${stateTotal}</b><span>States</span></div>
-      <div class="stat"><b>${d.reps.length}</b><span>Current pins</span></div>
+      <div class="stat"><b>${territoryTotal}</b><span>Territories</span></div>
+      <div class="stat"><b>${d.reps.length}</b><span>People</span></div>
     </div>
   </header>
 
   <nav class="navrow" aria-label="Map views">
-    <a class="navlink" href="index.html">Current territory map</a>
-    <a class="navlink here" href="future.html" aria-current="page">Future consideration</a>
+    <a class="navlink" href="index.html">Team map</a>
+    <a class="navlink here" href="future.html" aria-current="page">Territory map</a>
   </nav>
 
   <div class="layout">
@@ -228,7 +264,7 @@ const html = `<title>Future Consideration Territories</title>
     <section class="panel mapwrap" id="mapwrap">
       <div class="mapctl">
         <button id="labelToggle" aria-pressed="true">Labels</button>
-        <button id="pinToggle" aria-pressed="true">Team pins</button>
+        <button id="pinToggle" aria-pressed="true">People</button>
         <button id="reset">Reset view</button>
       </div>
       <svg viewBox="0 0 ${d.W} ${d.H}" role="img" aria-label="United States map divided into five proposed sales regions">
@@ -251,20 +287,32 @@ const html = `<title>Future Consideration Territories</title>
           </g>
         </g>
       </svg>
+      <div class="maplegend" id="legend">
+        ${GROUPS.map(g => {
+          const n = d.reps.filter(r => r.group === g.key).length;
+          return `<button class="lg ${g.key}" data-g="${g.key}" aria-pressed="true">` +
+            `<svg width="17" height="17" viewBox="-9 -9 18 18" aria-hidden="true">` +
+            `<g class="pin ${g.key}">${MARKER[g.key]}</g></svg>` +
+            `${g.label}<span class="n">${n}</span></button>`;
+        }).join('')}
+      </div>
       <div class="tip" id="tip"></div>
     </section>
   </div>
 
   <footer>
-    <span>Draft regional model for planning — not the current book of business. See the <a href="index.html" style="color:var(--accent)">current territory map</a> for today's assignments.</span>
+    <span>Draft regional model for planning, with today's team plotted on it. Per-rep assignments as they stand now are on the <a href="index.html" style="color:var(--accent)">current territory map</a>.</span>
     <button class="theme" id="themeBtn">Toggle theme</button>
   </footer>
 </div>
 
 <script>
 const ABBR = ${JSON.stringify(ABBR)};
+const MARKER = ${JSON.stringify(MARKER)};
+const GROUP_LABEL = ${JSON.stringify(Object.fromEntries(GROUPS.map(g => [g.key, g.label])))};
 const REGIONS = ${JSON.stringify(regions.map(r => ({ key: r.key, name: r.name, color: r.color, abbrs: r.abbrs, countLabel: r.countLabel, states: r.states, candidates: r.candidates, subs: r.subs.map(t => ({ name: t.name, states: t.states, chips: chipsFor(t) })) })))};
-const PEOPLE = ${JSON.stringify(d.reps.map(r => ({ name: r.name, city: r.city, role: r.role, group: r.group, state: r.state, region: r.region, x: r.x, y: r.y })))};
+const PEOPLE = ${JSON.stringify(d.reps.map(r => ({ name: r.name, city: r.city, role: r.role, group: r.group, state: r.state, region: r.region, x: r.x, y: r.y,
+  count: r.group === 'team' ? 4 : 1 })))};
 const W=${d.W}, H=${d.H};
 
 const listEl = document.getElementById('list');
@@ -302,15 +350,30 @@ REGIONS.forEach(r => {
   listEl.appendChild(li);
 });
 
-// --- pins for current team ---
+// --- people on the map ---
 PEOPLE.forEach(p => {
   const g = document.createElementNS('http://www.w3.org/2000/svg','g');
   g.setAttribute('class','pin '+p.group);
   g.setAttribute('transform',\`translate(\${p.x} \${p.y})\`);
   g.dataset.region = p.region;
-  g.innerHTML = '<circle class="core" r="5.5"></circle>';
+  g.dataset.group = p.group;
+  g.innerHTML = MARKER[p.group] +
+    (p.count > 1 ? \`<circle class="badge" cx="6.5" cy="-6.5" r="5.6"></circle>\` +
+                   \`<text class="badgetx" x="6.5" y="-6.5">\${p.count}</text>\` : '');
+  g.addEventListener('mouseenter', e => showPersonTip(p, e));
+  g.addEventListener('mousemove', e => showPersonTip(p, e));
+  g.addEventListener('mouseleave', hideTip);
   pinsG.appendChild(g);
 });
+
+function showPersonTip(p, evt){
+  const wr = wrap.getBoundingClientRect();
+  tip.style.left = (evt.clientX - wr.left) + 'px';
+  tip.style.top = (evt.clientY - wr.top - 6) + 'px';
+  tip.innerHTML = \`<div class="tn">\${p.name}</div><div>\${p.city}</div>\` +
+    \`<div class="tr">\${GROUP_LABEL[p.group]} · \${p.role}</div>\`;
+  tip.style.opacity = 1;
+}
 
 // --- tooltip ---
 function showTip(key, evt){
@@ -393,6 +456,16 @@ function toggler(btnId, targetId){
     document.getElementById(targetId).style.display = on ? '' : 'none';
   });
 }
+const groupOn = {};
+GROUP_LABEL && Object.keys(GROUP_LABEL).forEach(k => groupOn[k] = true);
+document.getElementById('legend').addEventListener('click', e => {
+  const btn = e.target.closest('.lg'); if(!btn) return;
+  const g = btn.dataset.g;
+  groupOn[g] = !groupOn[g];
+  btn.setAttribute('aria-pressed', groupOn[g]);
+  document.querySelectorAll(\`.pin[data-group="\${g}"]\`).forEach(el => el.classList.toggle('off', !groupOn[g]));
+});
+
 toggler('labelToggle','rlabels');
 toggler('pinToggle','pins');
 

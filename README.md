@@ -16,10 +16,16 @@ no external services or map-tile servers, so it loads anywhere.
 - Toggle roles on/off via the legend
 - Light / dark themes
 
-## Future consideration territories (`future.html`)
+## Territory map (`future.html`)
 
 A second page proposing a five-region split of the country, for territory
-planning. Reachable from the link in the header of the main map.
+planning, with the sales team plotted on it. Reachable from the link in the
+header of the main map.
+
+Everyone on the map carries their own marker **shape** as well as colour, so the
+roles stay apart without relying on hue: filled circle = direct rep, square =
+indirect rep, diamond = trainer, circle with a count = partner team, dashed ring
+= future consideration. The legend under the map doubles as a role filter.
 
 - **Southeast** — FL, GA, AL, SC, NC — split into three territories:
   1. FL  2. AL & GA  3. N/S Carolina

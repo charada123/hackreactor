@@ -179,7 +179,7 @@ const html = `<title>Sales Rep Territory Map</title>
       <button class="tab" data-v="trainer" role="tab" aria-selected="false">Trainers</button>
       <button class="tab" data-v="both" role="tab" aria-selected="false">Sales + Trainers</button>
     </div>
-    <a class="navlink" href="future.html">Future consideration territories &rarr;</a>
+    <a class="navlink" href="future.html">Territory map &rarr;</a>
   </div>
 
   <div class="layout">
