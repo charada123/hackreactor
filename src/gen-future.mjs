@@ -116,9 +116,31 @@ const SLOTS = [
 const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w &&
                            a.y < b.y + b.h && b.y < a.y + a.h;
 
-function placeLabels(people) {
+// The region names are drawn on the map too, so they're obstacles as much as
+// the markers are — "Central" and "Tammy Graham" otherwise land on top of
+// each other.
+const REGION_LABEL_PX = 17;
+function regionLabelBoxes(regions) {
+  const k = REGION_LABEL_PX / 14;   // CHAR_W is calibrated at 14px
+  const boxes = regions.map(r => {
+    const w = textWidth(r.name) * k;
+    return { x: r.x - w / 2 - 3, y: r.y - (REGION_LABEL_PX + 4) / 2, w: w + 6, h: REGION_LABEL_PX + 4 };
+  });
+  // The territory numerals only appear once a region is zoomed, but the map
+  // scales uniformly — clearing them at 1x clears them at every zoom level.
+  for (const r of regions) {
+    for (const t of r.subs || []) {
+      boxes.push({ x: t.x - 9, y: t.y - 11, w: 18, h: 22 });
+    }
+  }
+  return boxes;
+}
+
+function placeLabels(people, obstacles = []) {
   // Markers are obstacles for every label, including their own.
-  const blocked = people.map(p => ({ x: p.x - PIN_R, y: p.y - PIN_R, w: PIN_R * 2, h: PIN_R * 2 }));
+  const blocked = people
+    .map(p => ({ x: p.x - PIN_R, y: p.y - PIN_R, w: PIN_R * 2, h: PIN_R * 2 }))
+    .concat(obstacles);
   const placed = [];
   // Crowded pins have the fewest workable slots, so they choose first.
   const order = people.map((p, i) => ({ p, i,
@@ -152,7 +174,7 @@ function placeLabels(people) {
 }
 
 const W = d.W, H = d.H;
-const LABELS = placeLabels(d.reps);
+const LABELS = placeLabels(d.reps, regionLabelBoxes(d.regions));
 
 // Role marker: shape first, colour second.
 // The roster keeps finer roles; the map shows three. Trainers and the partner
@@ -264,8 +286,8 @@ const html = `<title>Territory Map</title>
   .rcount{margin-left:auto;font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;
     font-variant-numeric:tabular-nums;}
   .abbrs{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;}
-  .ab{font-size:11px;font-weight:650;color:var(--muted);background:var(--panel-2);
-    border:1px solid var(--line);border-radius:6px;padding:2px 6px;letter-spacing:.02em;}
+  .ab{font-size:12px;font-weight:650;color:var(--muted);background:var(--panel-2);
+    border:1px solid var(--line);border-radius:6px;padding:2.5px 7px;letter-spacing:.02em;}
   .rpeople{margin-top:8px;font-size:11.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 8px;}
   .rpeople .pn{display:inline-flex;align-items:center;gap:5px;}
   .rpeople .pd{width:8px;height:8px;flex:none;}
@@ -275,9 +297,9 @@ const html = `<title>Territory Map</title>
   .rnone{margin-top:8px;font-size:11.5px;color:var(--faint);font-style:italic;}
   .subs{margin-top:8px;display:flex;flex-direction:column;gap:6px;}
   .sub{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
-  .snumb{width:16px;height:16px;border-radius:5px;flex:none;display:inline-flex;align-items:center;
-    justify-content:center;font-size:10px;font-weight:750;color:var(--panel);}
-  .sname{font-size:12.5px;font-weight:650;}
+  .snumb{width:19px;height:19px;border-radius:6px;flex:none;display:inline-flex;align-items:center;
+    justify-content:center;font-size:11.5px;font-weight:750;color:#fff;}
+  .sname{font-size:14px;font-weight:700;}
   .sub .abbrs{margin-top:0;}
   .rcand{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line-strong);display:flex;
     align-items:baseline;gap:7px;flex-wrap:wrap;font-size:11.5px;}
@@ -305,13 +327,13 @@ const html = `<title>Territory Map</title>
   .rfill.dim{fill-opacity:.07;}
   .sborder{fill:none;stroke:var(--ink);stroke-opacity:.4;stroke-width:1.1;stroke-dasharray:4 3;
     vector-effect:non-scaling-stroke;stroke-linejoin:round;pointer-events:none;}
-  .snum{fill:var(--ink);font:750 11px var(--sans);text-anchor:middle;dominant-baseline:central;pointer-events:none;
-    paint-order:stroke;stroke:var(--panel);stroke-width:3.4px;stroke-linejoin:round;opacity:0;transition:opacity .25s;}
+  .snum{fill:var(--ink);font:750 17px var(--sans);text-anchor:middle;dominant-baseline:central;pointer-events:none;
+    paint-order:stroke;stroke:var(--panel);stroke-width:4.6px;stroke-linejoin:round;opacity:0;transition:opacity .25s;}
   .snum.show{opacity:.9;}
   .rborder{fill:none;stroke:var(--ink);stroke-opacity:.62;stroke-width:2.4;vector-effect:non-scaling-stroke;
     stroke-linejoin:round;pointer-events:none;}
-  .rlabel{fill:var(--ink);font:750 13px var(--sans);text-anchor:middle;dominant-baseline:central;pointer-events:none;
-    paint-order:stroke;stroke:var(--panel);stroke-width:3.6px;stroke-linejoin:round;letter-spacing:.02em;}
+  .rlabel{fill:var(--ink);font:750 17px var(--sans);text-anchor:middle;dominant-baseline:central;pointer-events:none;
+    paint-order:stroke;stroke:var(--panel);stroke-width:4.6px;stroke-linejoin:round;letter-spacing:.02em;}
   .rlabel.dim{opacity:.3;}
   .rlabel.hide{opacity:0;}
 
