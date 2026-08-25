@@ -24,8 +24,11 @@ header of the main map.
 
 Everyone on the map carries their own marker **shape** as well as colour, so the
 roles stay apart without relying on hue: filled circle = direct rep, square =
-indirect rep, diamond = trainer, circle with a count = partner team, dashed ring
-= future consideration. The legend under the map doubles as a role filter.
+indirect rep (the partner team is an indirect square with a count badge), dashed
+ring = future consideration. The legend under the map doubles as a role filter,
+and each marker is labelled with the person's name — the labels are placed at
+build time by trying a ring of candidate slots per pin and taking the first that
+clears the markers and labels already placed. The Names button hides them.
 
 - **Southeast** — FL, GA, AL, SC, NC — split into three territories:
   1. FL  2. AL & GA  3. N/S Carolina

@@ -98,8 +98,6 @@
   .rpeople .pd{width:8px;height:8px;flex:none;}
   .rpeople .pd.direct{background:var(--direct);border-radius:50%}
   .rpeople .pd.field{background:var(--field);border-radius:2px}
-  .rpeople .pd.trainer{background:var(--trainer);transform:rotate(45deg)}
-  .rpeople .pd.team{background:var(--team);border-radius:50%}
   .rpeople .pd.prospect{background:transparent;border:1.5px dashed var(--prospect);border-radius:50%}
   .rnone{margin-top:8px;font-size:11.5px;color:var(--faint);font-style:italic;}
   .subs{margin-top:8px;display:flex;flex-direction:column;gap:6px;}
@@ -148,13 +146,16 @@
      reads when printed or seen by someone who can't separate the hues. */
   .pin{cursor:pointer;}
   .pin .core{stroke:var(--panel);stroke-width:1.8;}
-  .pin.field .core{fill:var(--field)} .pin.trainer .core{fill:var(--trainer)} .pin.team .core{fill:var(--team)}
-  .pin.direct .core{fill:var(--direct)}
+  .pin.field .core{fill:var(--field)} .pin.direct .core{fill:var(--direct)}
   .pin.prospect .core{fill:var(--panel);stroke:var(--prospect);stroke-width:2.4;stroke-dasharray:3.4 2.6;}
-  .pin .badge{fill:var(--panel);stroke:var(--team);stroke-width:1.2;}
+  .pin .badge{fill:var(--panel);stroke:var(--field);stroke-width:1.2;}
   .pin .badgetx{font:700 8px var(--sans);fill:var(--ink);text-anchor:middle;dominant-baseline:central;}
   .pin.dim{opacity:.15;}
   .pin.off{display:none;}
+  .plabel{font:650 10px var(--sans);fill:var(--ink);pointer-events:none;
+    paint-order:stroke;stroke:var(--panel);stroke-width:3px;stroke-linejoin:round;
+    dominant-baseline:central;}
+  #pins.nonames .plabel{display:none;}
   .pin:hover .core{stroke:var(--ink);}
 
   .maplegend{display:flex;flex-wrap:wrap;gap:6px;padding:11px 12px;border-top:1px solid var(--line);}
@@ -211,6 +212,7 @@
       <div class="mapctl">
         <button id="labelToggle" aria-pressed="true">Labels</button>
         <button id="pinToggle" aria-pressed="true">People</button>
+        <button id="nameToggle" aria-pressed="true">Names</button>
         <button id="reset">Reset view</button>
       </div>
       <svg viewBox="0 0 960 600" role="img" aria-label="United States map divided into five proposed sales regions">
@@ -231,7 +233,7 @@
         </g>
       </svg>
       <div class="maplegend" id="legend">
-        <button class="lg direct" data-g="direct" aria-pressed="true"><svg width="17" height="17" viewBox="-9 -9 18 18" aria-hidden="true"><g class="pin direct"><circle class="core" r="6.5"></circle></g></svg>Direct rep<span class="n">3</span></button><button class="lg field" data-g="field" aria-pressed="true"><svg width="17" height="17" viewBox="-9 -9 18 18" aria-hidden="true"><g class="pin field"><rect class="core" x="-6" y="-6" width="12" height="12" rx="2.5"></rect></g></svg>Indirect rep<span class="n">5</span></button><button class="lg trainer" data-g="trainer" aria-pressed="true"><svg width="17" height="17" viewBox="-9 -9 18 18" aria-hidden="true"><g class="pin trainer"><path class="core" d="M0,-7.6 L7.6,0 L0,7.6 L-7.6,0 Z"></path></g></svg>Trainer<span class="n">1</span></button><button class="lg team" data-g="team" aria-pressed="true"><svg width="17" height="17" viewBox="-9 -9 18 18" aria-hidden="true"><g class="pin team"><circle class="core" r="6.5"></circle></g></svg>Partner team<span class="n">1</span></button><button class="lg prospect" data-g="prospect" aria-pressed="true"><svg width="17" height="17" viewBox="-9 -9 18 18" aria-hidden="true"><g class="pin prospect"><circle class="core" r="7"></circle></g></svg>Future consideration<span class="n">5</span></button>
+        <button class="lg direct" data-g="direct" aria-pressed="true"><svg width="17" height="17" viewBox="-9 -9 18 18" aria-hidden="true"><g class="pin direct"><circle class="core" r="6.5"></circle></g></svg>Direct rep<span class="n">3</span></button><button class="lg field" data-g="field" aria-pressed="true"><svg width="17" height="17" viewBox="-9 -9 18 18" aria-hidden="true"><g class="pin field"><rect class="core" x="-6" y="-6" width="12" height="12" rx="2.5"></rect></g></svg>Indirect rep<span class="n">7</span></button><button class="lg prospect" data-g="prospect" aria-pressed="true"><svg width="17" height="17" viewBox="-9 -9 18 18" aria-hidden="true"><g class="pin prospect"><circle class="core" r="7"></circle></g></svg>Future consideration<span class="n">5</span></button>
       </div>
       <div class="tip" id="tip"></div>
     </section>
@@ -245,10 +247,10 @@
 
 <script>
 const ABBR = {"Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO","Connecticut":"CT","Delaware":"DE","Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID","Illinois":"IL","Indiana":"IN","Iowa":"IA","Kansas":"KS","Kentucky":"KY","Louisiana":"LA","Maine":"ME","Maryland":"MD","Massachusetts":"MA","Michigan":"MI","Minnesota":"MN","Mississippi":"MS","Missouri":"MO","Montana":"MT","Nebraska":"NE","Nevada":"NV","New Hampshire":"NH","New Jersey":"NJ","New Mexico":"NM","New York":"NY","North Carolina":"NC","North Dakota":"ND","Ohio":"OH","Oklahoma":"OK","Oregon":"OR","Pennsylvania":"PA","Rhode Island":"RI","South Carolina":"SC","South Dakota":"SD","Tennessee":"TN","Texas":"TX","Utah":"UT","Vermont":"VT","Virginia":"VA","Washington":"WA","West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY","District of Columbia":"DC"};
-const MARKER = {"direct":"<circle class=\"core\" r=\"6.5\"></circle>","field":"<rect class=\"core\" x=\"-6\" y=\"-6\" width=\"12\" height=\"12\" rx=\"2.5\"></rect>","trainer":"<path class=\"core\" d=\"M0,-7.6 L7.6,0 L0,7.6 L-7.6,0 Z\"></path>","team":"<circle class=\"core\" r=\"6.5\"></circle>","prospect":"<circle class=\"core\" r=\"7\"></circle>"};
-const GROUP_LABEL = {"direct":"Direct rep","field":"Indirect rep","trainer":"Trainer","team":"Partner team","prospect":"Future consideration"};
+const MARKER = {"direct":"<circle class=\"core\" r=\"6.5\"></circle>","field":"<rect class=\"core\" x=\"-6\" y=\"-6\" width=\"12\" height=\"12\" rx=\"2.5\"></rect>","prospect":"<circle class=\"core\" r=\"7\"></circle>"};
+const GROUP_LABEL = {"direct":"Direct rep","field":"Indirect rep","prospect":"Future consideration"};
 const REGIONS = [{"key":"southeast","name":"Southeast","color":"#e0619b","abbrs":["FL","GA","AL","SC","NC"],"countLabel":"5 states","states":["Florida","Georgia","Alabama","South Carolina","North Carolina"],"candidates":[],"subs":[{"name":"FL","states":["Florida"],"chips":["FL"]},{"name":"AL & GA","states":["Alabama","Georgia"],"chips":["AL","GA"]},{"name":"N/S Carolina","states":["North Carolina","South Carolina"],"chips":["NC","SC"]}]},{"key":"central","name":"Central","color":"#2f9e44","abbrs":["TN","TX","LA","MS","OK","AR","IL","IN","KY","OH","MI","WI"],"countLabel":"12 states","states":["Tennessee","Texas","Louisiana","Mississippi","Oklahoma","Arkansas","Illinois","Indiana","Kentucky","Ohio","Michigan","Wisconsin"],"candidates":[],"subs":[{"name":"S. Texas","states":[],"chips":["TX (S)"]},{"name":"N. Texas + OK","states":["Oklahoma"],"chips":["OK","TX (N)"]},{"name":"LA, MS & AR","states":["Louisiana","Mississippi","Arkansas"],"chips":["LA","MS","AR"]},{"name":"TN & KY","states":["Tennessee","Kentucky"],"chips":["TN","KY"]},{"name":"OH & MI","states":["Ohio","Michigan"],"chips":["OH","MI"]},{"name":"IL, IN & WI","states":["Illinois","Indiana","Wisconsin"],"chips":["IL","IN","WI"]}]},{"key":"northeast","name":"Northeast","color":"#7a6ff0","abbrs":["ME","NH","VT","MA","RI","CT","NY","NJ","PA","DE","MD","VA","WV","DC"],"countLabel":"13 states + DC","states":["Maine","New Hampshire","Vermont","Massachusetts","Rhode Island","Connecticut","New York","New Jersey","Pennsylvania","Delaware","Maryland","Virginia","West Virginia"],"candidates":[{"name":"Rich Cialella","role":"Regional Business Director"}],"subs":[{"name":"New England","states":["Maine","New Hampshire","Vermont","Massachusetts","Connecticut","Rhode Island"],"chips":["ME","NH","VT","MA","CT","RI"]},{"name":"PA, MD, DE & the Virginias","states":["Pennsylvania","Maryland","Delaware","Virginia","West Virginia","District of Columbia"],"chips":["PA","MD","DE","VA","WV","DC"]},{"name":"NY & NJ","states":["New York","New Jersey"],"chips":["NY","NJ"]}]},{"key":"plains","name":"Great Plains","color":"#d9932b","abbrs":["UT","CO","NE","WY","MT","SD","ND","MN","IA","KS","MO"],"countLabel":"11 states","states":["Utah","Colorado","Nebraska","Wyoming","Montana","South Dakota","North Dakota","Minnesota","Iowa","Kansas","Missouri"],"candidates":[],"subs":[{"name":"KS & MO","states":["Kansas","Missouri"],"chips":["KS","MO"]},{"name":"CO, UT, WY & MT","states":["Colorado","Utah","Wyoming","Montana"],"chips":["CO","UT","WY","MT"]},{"name":"NE, Dakotas, MN & IA","states":["Nebraska","North Dakota","South Dakota","Minnesota","Iowa"],"chips":["NE","ND","SD","MN","IA"]}]},{"key":"west","name":"West","color":"#17aec9","abbrs":["AK","WA","OR","ID","CA","NV","AZ","NM","HI"],"countLabel":"9 states","states":["Alaska","Washington","Oregon","Idaho","California","Nevada","Arizona","New Mexico","Hawaii"],"candidates":[],"subs":[{"name":"SoCal + Vegas + HI","states":["Hawaii"],"chips":["HI","CA (San Diego–Long Beach)","NV (Vegas)"]},{"name":"LA to San Luis Obispo","states":[],"chips":["CA (LA–SLO)"]},{"name":"N. California + NV","states":[],"chips":["CA (N)","NV (N)"]},{"name":"AZ & NM","states":["Arizona","New Mexico"],"chips":["AZ","NM"]},{"name":"AK, WA, OR & ID","states":["Alaska","Washington","Oregon","Idaho"],"chips":["AK","WA","OR","ID"]}]}];
-const PEOPLE = [{"name":"John Godson","city":"Tempe, AZ","role":"Sales Rep","group":"field","state":"Arizona","region":"west","x":243.4,"y":386,"count":1},{"name":"Karla Smyth","city":"Boca Raton, FL","role":"Sales Rep","group":"field","state":"Florida","region":"southeast","x":832,"y":535.7,"count":1},{"name":"Trina Barr","city":"Boulder, CO","role":"Sales Rep · Innovaes Labs","group":"field","state":"Colorado","region":"plains","x":374.9,"y":259.7,"count":1},{"name":"Tammy Graham","city":"Caseyville, IL","role":"Sales Rep & Clinical Trainer","group":"field","state":"Illinois","region":"central","x":625.6,"y":293.7,"count":1},{"name":"Andrew Liscio, RN","city":"Neptune, NJ","role":"Trainer & Sales Rep","group":"trainer","state":"New Jersey","region":"northeast","x":879.5,"y":221.8,"count":1},{"name":"Cosmetic Solutions","city":"Northern CA / Reno","role":"Lauren Padilla · Omira Sadiq · Candace Clay · Nadia Buchlo","group":"team","state":"Nevada","region":"west","x":139.2,"y":228.9,"count":4},{"name":"John Dawson","city":"Lewisville, TX","role":"Sales Rep","group":"field","state":"Texas","region":"central","x":507.9,"y":417.9,"count":1},{"name":"Taylor Macey","city":"Los Angeles, CA","role":"Direct Sales Rep · SoCal","group":"direct","state":"California","region":"west","x":136.7,"y":350.5,"count":1},{"name":"Kyle Shapero","city":"Orlando, FL","role":"Direct Sales Rep · FL","group":"direct","state":"Florida","region":"southeast","x":800.9,"y":493.7,"count":1},{"name":"Nick","city":"Colorado Springs, CO","role":"Direct Sales Rep · Colorado","group":"direct","state":"Colorado","region":"plains","x":379.8,"y":285.8,"count":1},{"name":"Jonathan Butto","city":"Southern Florida","role":"Sr. TM · Prospect","group":"prospect","state":"Florida","region":"southeast","x":832.9,"y":548.6,"count":1},{"name":"Manny Robelo","city":"Boston, MA","role":"DSM · Prospect","group":"prospect","state":"Massachusetts","region":"northeast","x":914.2,"y":165,"count":1},{"name":"Seth Cooley","city":"CO / UT","role":"DSM · Prospect","group":"prospect","state":"Utah","region":"plains","x":270.7,"y":229.5,"count":1},{"name":"Scott Kelly","city":"Texas","role":"RBD · Prospect","group":"prospect","state":"Texas","region":"central","x":537.4,"y":488.7,"count":1},{"name":"Zac Replogle","city":"NorCal","role":"RBD · Prospect","group":"prospect","state":"California","region":"west","x":87.5,"y":254.3,"count":1}];
+const PEOPLE = [{"name":"John Godson","city":"Tempe, AZ","role":"Sales Rep","group":"field","state":"Arizona","region":"west","x":243.4,"y":386,"count":1,"lab":{"dx":11,"dy":0,"anchor":"start"}},{"name":"Karla Smyth","city":"Boca Raton, FL","role":"Sales Rep","group":"field","state":"Florida","region":"southeast","x":832,"y":535.7,"count":1,"lab":{"dx":11,"dy":0,"anchor":"start"}},{"name":"Trina Barr","city":"Boulder, CO","role":"Sales Rep · Innovaes Labs","group":"field","state":"Colorado","region":"plains","x":374.9,"y":259.7,"count":1,"lab":{"dx":11,"dy":0,"anchor":"start"}},{"name":"Tammy Graham","city":"Caseyville, IL","role":"Sales Rep & Clinical Trainer","group":"field","state":"Illinois","region":"central","x":625.6,"y":293.7,"count":1,"lab":{"dx":11,"dy":0,"anchor":"start"}},{"name":"Andrew Liscio, RN","city":"Neptune, NJ","role":"Trainer & Sales Rep","group":"field","state":"New Jersey","region":"northeast","x":879.5,"y":221.8,"count":1,"lab":{"dx":-11,"dy":0,"anchor":"end"}},{"name":"Cosmetic Solutions","city":"Northern CA / Reno","role":"Lauren Padilla · Omira Sadiq · Candace Clay · Nadia Buchlo","group":"field","state":"Nevada","region":"west","x":139.2,"y":228.9,"count":4,"lab":{"dx":11,"dy":0,"anchor":"start"}},{"name":"John Dawson","city":"Lewisville, TX","role":"Sales Rep","group":"field","state":"Texas","region":"central","x":507.9,"y":417.9,"count":1,"lab":{"dx":11,"dy":0,"anchor":"start"}},{"name":"Taylor Macey","city":"Los Angeles, CA","role":"Direct Sales Rep · SoCal","group":"direct","state":"California","region":"west","x":136.7,"y":350.5,"count":1,"lab":{"dx":11,"dy":0,"anchor":"start"}},{"name":"Kyle Shapero","city":"Orlando, FL","role":"Direct Sales Rep · FL","group":"direct","state":"Florida","region":"southeast","x":800.9,"y":493.7,"count":1,"lab":{"dx":11,"dy":0,"anchor":"start"}},{"name":"Nick","city":"Colorado Springs, CO","role":"Direct Sales Rep · Colorado","group":"direct","state":"Colorado","region":"plains","x":379.8,"y":285.8,"count":1,"lab":{"dx":11,"dy":0,"anchor":"start"}},{"name":"Jonathan Butto","city":"Southern Florida","role":"Sr. TM · Prospect","group":"prospect","state":"Florida","region":"southeast","x":832.9,"y":548.6,"count":1,"lab":{"dx":11,"dy":0,"anchor":"start"}},{"name":"Manny Robelo","city":"Boston, MA","role":"DSM · Prospect","group":"prospect","state":"Massachusetts","region":"northeast","x":914.2,"y":165,"count":1,"lab":{"dx":-11,"dy":0,"anchor":"end"}},{"name":"Seth Cooley","city":"CO / UT","role":"DSM · Prospect","group":"prospect","state":"Utah","region":"plains","x":270.7,"y":229.5,"count":1,"lab":{"dx":11,"dy":0,"anchor":"start"}},{"name":"Scott Kelly","city":"Texas","role":"RBD · Prospect","group":"prospect","state":"Texas","region":"central","x":537.4,"y":488.7,"count":1,"lab":{"dx":11,"dy":0,"anchor":"start"}},{"name":"Zac Replogle","city":"NorCal","role":"RBD · Prospect","group":"prospect","state":"California","region":"west","x":87.5,"y":254.3,"count":1,"lab":{"dx":11,"dy":0,"anchor":"start"}}];
 const W=960, H=600;
 
 const listEl = document.getElementById('list');
@@ -295,7 +297,8 @@ PEOPLE.forEach(p => {
   g.dataset.group = p.group;
   g.innerHTML = MARKER[p.group] +
     (p.count > 1 ? `<circle class="badge" cx="6.5" cy="-6.5" r="5.6"></circle>` +
-                   `<text class="badgetx" x="6.5" y="-6.5">${p.count}</text>` : '');
+                   `<text class="badgetx" x="6.5" y="-6.5">${p.count}</text>` : '') +
+    `<text class="plabel" x="${p.lab.dx}" y="${p.lab.dy}" text-anchor="${p.lab.anchor}">${p.name}</text>`;
   g.addEventListener('mouseenter', e => showPersonTip(p, e));
   g.addEventListener('mousemove', e => showPersonTip(p, e));
   g.addEventListener('mouseleave', hideTip);
@@ -400,6 +403,13 @@ document.getElementById('legend').addEventListener('click', e => {
   groupOn[g] = !groupOn[g];
   btn.setAttribute('aria-pressed', groupOn[g]);
   document.querySelectorAll(`.pin[data-group="${g}"]`).forEach(el => el.classList.toggle('off', !groupOn[g]));
+});
+
+let namesOn = true;
+document.getElementById('nameToggle').addEventListener('click', () => {
+  namesOn = !namesOn;
+  document.getElementById('nameToggle').setAttribute('aria-pressed', namesOn);
+  pinsG.classList.toggle('nonames', !namesOn);
 });
 
 toggler('labelToggle','rlabels');

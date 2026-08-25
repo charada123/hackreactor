@@ -36,19 +36,91 @@ const regions = d.regions.map(r => ({
 const stateTotal = regions.reduce((n, r) => n + r.states.length, 0);
 const territoryTotal = regions.reduce((n, r) => n + (r.subs.length || 1), 0);
 
+// ---- Name labels ----
+// 15 names on one map collide if they all sit in the same place, so each label
+// is offered a ring of candidate slots and takes the first that clears the
+// labels and markers already placed. Widths are estimated from the glyphs
+// because there's no text engine at build time.
+const CHAR_W = { default: 5.5, narrow: 2.9, wide: 8.6, upper: 6.7 };
+const textWidth = str => [...str].reduce((w, ch) => w +
+  ('iljtfr.,\'!|:;'.includes(ch) ? CHAR_W.narrow
+    : 'mwMW'.includes(ch) ? CHAR_W.wide
+    : ch === ch.toUpperCase() && ch !== ch.toLowerCase() ? CHAR_W.upper
+    : CHAR_W.default), 0);
+
+const LABEL_H = 11;
+const PIN_R = 9;          // marker half-size to steer clear of
+const SLOTS = [
+  { dx: 11, dy: 0, anchor: 'start' },
+  { dx: -11, dy: 0, anchor: 'end' },
+  { dx: 0, dy: -13, anchor: 'middle' },
+  { dx: 0, dy: 15, anchor: 'middle' },
+  { dx: 10, dy: -11, anchor: 'start' },
+  { dx: -10, dy: -11, anchor: 'end' },
+  { dx: 10, dy: 13, anchor: 'start' },
+  { dx: -10, dy: 13, anchor: 'end' },
+  { dx: 0, dy: -25, anchor: 'middle' },
+  { dx: 0, dy: 27, anchor: 'middle' },
+  { dx: 14, dy: -22, anchor: 'start' },
+  { dx: -14, dy: -22, anchor: 'end' },
+  { dx: 14, dy: 24, anchor: 'start' },
+  { dx: -14, dy: 24, anchor: 'end' },
+];
+const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w &&
+                           a.y < b.y + b.h && b.y < a.y + a.h;
+
+function placeLabels(people) {
+  // Markers are obstacles for every label, including their own.
+  const blocked = people.map(p => ({ x: p.x - PIN_R, y: p.y - PIN_R, w: PIN_R * 2, h: PIN_R * 2 }));
+  const placed = [];
+  // Crowded pins have the fewest workable slots, so they choose first.
+  const order = people.map((p, i) => ({ p, i,
+    near: people.filter(q => Math.hypot(q.x - p.x, q.y - p.y) < 45).length }))
+    .sort((a, b) => b.near - a.near || a.p.y - b.p.y);
+
+  const out = new Array(people.length);
+  for (const { p, i } of order) {
+    const w = textWidth(p.name);
+    let chosen = null;
+    for (const slot of SLOTS) {
+      const x = slot.anchor === 'start' ? p.x + slot.dx
+        : slot.anchor === 'end' ? p.x + slot.dx - w
+        : p.x - w / 2;
+      const box = { x, y: p.y + slot.dy - LABEL_H / 2, w, h: LABEL_H };
+      if (box.x < 2 || box.x + box.w > W - 2 || box.y < 2 || box.y + box.h > H - 2) continue;
+      if (blocked.some(b => overlaps(box, b))) continue;
+      if (placed.some(b => overlaps(box, b))) continue;
+      chosen = { ...slot, box };
+      break;
+    }
+    // Nothing clear: fall back to the first slot rather than drop the name.
+    if (!chosen) {
+      const slot = SLOTS[0];
+      chosen = { ...slot, box: { x: p.x + slot.dx, y: p.y + slot.dy - LABEL_H / 2, w, h: LABEL_H } };
+    }
+    placed.push(chosen.box);
+    out[i] = { dx: chosen.dx, dy: chosen.dy, anchor: chosen.anchor };
+  }
+  return out;
+}
+
+const W = d.W, H = d.H;
+const LABELS = placeLabels(d.reps);
+
 // Role marker: shape first, colour second.
+// The roster keeps finer roles; the map shows three. Trainers and the partner
+// team sell through the indirect channel, so they carry the indirect marker
+// (the team keeps a count badge, since it stands for four people).
+const DISPLAY_GROUP = { direct: 'direct', field: 'field', trainer: 'field',
+                        team: 'field', prospect: 'prospect' };
 const GROUPS = [
   { key: 'direct', label: 'Direct rep' },
   { key: 'field', label: 'Indirect rep' },
-  { key: 'trainer', label: 'Trainer' },
-  { key: 'team', label: 'Partner team' },
   { key: 'prospect', label: 'Future consideration' },
 ];
 const MARKER = {
   direct: '<circle class="core" r="6.5"></circle>',
   field: '<rect class="core" x="-6" y="-6" width="12" height="12" rx="2.5"></rect>',
-  trainer: '<path class="core" d="M0,-7.6 L7.6,0 L0,7.6 L-7.6,0 Z"></path>',
-  team: '<circle class="core" r="6.5"></circle>',
   prospect: '<circle class="core" r="7"></circle>',
 };
 
@@ -152,8 +224,6 @@ const html = `<title>Territory Map</title>
   .rpeople .pd{width:8px;height:8px;flex:none;}
   .rpeople .pd.direct{background:var(--direct);border-radius:50%}
   .rpeople .pd.field{background:var(--field);border-radius:2px}
-  .rpeople .pd.trainer{background:var(--trainer);transform:rotate(45deg)}
-  .rpeople .pd.team{background:var(--team);border-radius:50%}
   .rpeople .pd.prospect{background:transparent;border:1.5px dashed var(--prospect);border-radius:50%}
   .rnone{margin-top:8px;font-size:11.5px;color:var(--faint);font-style:italic;}
   .subs{margin-top:8px;display:flex;flex-direction:column;gap:6px;}
@@ -202,13 +272,16 @@ const html = `<title>Territory Map</title>
      reads when printed or seen by someone who can't separate the hues. */
   .pin{cursor:pointer;}
   .pin .core{stroke:var(--panel);stroke-width:1.8;}
-  .pin.field .core{fill:var(--field)} .pin.trainer .core{fill:var(--trainer)} .pin.team .core{fill:var(--team)}
-  .pin.direct .core{fill:var(--direct)}
+  .pin.field .core{fill:var(--field)} .pin.direct .core{fill:var(--direct)}
   .pin.prospect .core{fill:var(--panel);stroke:var(--prospect);stroke-width:2.4;stroke-dasharray:3.4 2.6;}
-  .pin .badge{fill:var(--panel);stroke:var(--team);stroke-width:1.2;}
+  .pin .badge{fill:var(--panel);stroke:var(--field);stroke-width:1.2;}
   .pin .badgetx{font:700 8px var(--sans);fill:var(--ink);text-anchor:middle;dominant-baseline:central;}
   .pin.dim{opacity:.15;}
   .pin.off{display:none;}
+  .plabel{font:650 10px var(--sans);fill:var(--ink);pointer-events:none;
+    paint-order:stroke;stroke:var(--panel);stroke-width:3px;stroke-linejoin:round;
+    dominant-baseline:central;}
+  #pins.nonames .plabel{display:none;}
   .pin:hover .core{stroke:var(--ink);}
 
   .maplegend{display:flex;flex-wrap:wrap;gap:6px;padding:11px 12px;border-top:1px solid var(--line);}
@@ -265,6 +338,7 @@ const html = `<title>Territory Map</title>
       <div class="mapctl">
         <button id="labelToggle" aria-pressed="true">Labels</button>
         <button id="pinToggle" aria-pressed="true">People</button>
+        <button id="nameToggle" aria-pressed="true">Names</button>
         <button id="reset">Reset view</button>
       </div>
       <svg viewBox="0 0 ${d.W} ${d.H}" role="img" aria-label="United States map divided into five proposed sales regions">
@@ -289,7 +363,7 @@ const html = `<title>Territory Map</title>
       </svg>
       <div class="maplegend" id="legend">
         ${GROUPS.map(g => {
-          const n = d.reps.filter(r => r.group === g.key).length;
+          const n = d.reps.filter(r => DISPLAY_GROUP[r.group] === g.key).length;
           return `<button class="lg ${g.key}" data-g="${g.key}" aria-pressed="true">` +
             `<svg width="17" height="17" viewBox="-9 -9 18 18" aria-hidden="true">` +
             `<g class="pin ${g.key}">${MARKER[g.key]}</g></svg>` +
@@ -311,8 +385,8 @@ const ABBR = ${JSON.stringify(ABBR)};
 const MARKER = ${JSON.stringify(MARKER)};
 const GROUP_LABEL = ${JSON.stringify(Object.fromEntries(GROUPS.map(g => [g.key, g.label])))};
 const REGIONS = ${JSON.stringify(regions.map(r => ({ key: r.key, name: r.name, color: r.color, abbrs: r.abbrs, countLabel: r.countLabel, states: r.states, candidates: r.candidates, subs: r.subs.map(t => ({ name: t.name, states: t.states, chips: chipsFor(t) })) })))};
-const PEOPLE = ${JSON.stringify(d.reps.map(r => ({ name: r.name, city: r.city, role: r.role, group: r.group, state: r.state, region: r.region, x: r.x, y: r.y,
-  count: r.group === 'team' ? 4 : 1 })))};
+const PEOPLE = ${JSON.stringify(d.reps.map((r, i) => ({ name: r.name, city: r.city, role: r.role, group: DISPLAY_GROUP[r.group], state: r.state, region: r.region, x: r.x, y: r.y,
+  count: r.group === 'team' ? 4 : 1, lab: LABELS[i] })))};
 const W=${d.W}, H=${d.H};
 
 const listEl = document.getElementById('list');
@@ -359,7 +433,8 @@ PEOPLE.forEach(p => {
   g.dataset.group = p.group;
   g.innerHTML = MARKER[p.group] +
     (p.count > 1 ? \`<circle class="badge" cx="6.5" cy="-6.5" r="5.6"></circle>\` +
-                   \`<text class="badgetx" x="6.5" y="-6.5">\${p.count}</text>\` : '');
+                   \`<text class="badgetx" x="6.5" y="-6.5">\${p.count}</text>\` : '') +
+    \`<text class="plabel" x="\${p.lab.dx}" y="\${p.lab.dy}" text-anchor="\${p.lab.anchor}">\${p.name}</text>\`;
   g.addEventListener('mouseenter', e => showPersonTip(p, e));
   g.addEventListener('mousemove', e => showPersonTip(p, e));
   g.addEventListener('mouseleave', hideTip);
@@ -464,6 +539,13 @@ document.getElementById('legend').addEventListener('click', e => {
   groupOn[g] = !groupOn[g];
   btn.setAttribute('aria-pressed', groupOn[g]);
   document.querySelectorAll(\`.pin[data-group="\${g}"]\`).forEach(el => el.classList.toggle('off', !groupOn[g]));
+});
+
+let namesOn = true;
+document.getElementById('nameToggle').addEventListener('click', () => {
+  namesOn = !namesOn;
+  document.getElementById('nameToggle').setAttribute('aria-pressed', namesOn);
+  pinsG.classList.toggle('nonames', !namesOn);
 });
 
 toggler('labelToggle','rlabels');
