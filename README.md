@@ -59,7 +59,8 @@ colour, separated by dashed dividers and numbered on the card and — once you
 click into the region — on the map. Colours are assigned greedily against a
 territory adjacency graph built from the state topology, so no two territories
 that touch ever look alike; the heavier region border is what still groups them
-into regions.
+into regions. Region names are drawn in one shared blue (`--region-ink`), which
+keeps them distinct from the rep name labels drawn in the body ink.
 
 Named candidates under consideration for a region (currently Rich Cialella,
 Regional Business Director, for the Northeast) show on the region's card in
