@@ -13,14 +13,57 @@ const ABBR = {
   'District of Columbia':'DC',
 };
 
-// Tonal ramp across a region's territories. Adjacent list positions are pushed
-// to opposite ends of the ramp so neighbouring blocks stay distinguishable.
-function shade(i, n) {
-  if (n < 2) return 1;
-  const half = Math.ceil(n / 2);
-  const order = i % 2 === 0 ? i / 2 : half + (i - 1) / 2;
-  return +(0.62 + (1.85 - 0.62) * (order / (n - 1))).toFixed(3);
+// Every territory gets its own colour, assigned so that no two territories that
+// touch look alike. Golden-angle hues alone aren't enough — Oklahoma and Kansas
+// sit far apart in the list but share a border — so colours are chosen greedily
+// against the real adjacency graph, maximising the distance to each already
+// coloured neighbour.
+function hsl(h, s, l) {
+  const a = s * Math.min(l, 1 - l);
+  const f = n => {
+    const k = (n + h / 30) % 12;
+    const v = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return Math.round(255 * v).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
 }
+
+// 18 well-spread candidates: 9 hues in two lightness tiers.
+const PALETTE = [];
+for (let tier = 0; tier < 2; tier++) {
+  for (let i = 0; i < 9; i++) {
+    const h = (i * 40 + tier * 20 + 8) % 360;
+    PALETTE.push({ h, l: tier ? 0.42 : 0.58, hex: hsl(h, tier ? 0.62 : 0.70, tier ? 0.42 : 0.58) });
+  }
+}
+const hueGap = (a, b) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
+const swatchGap = (a, b) => hueGap(a.h, b.h) + Math.abs(a.l - b.l) * 120;
+
+function colourTerritories(ids, adjacency) {
+  const nbrs = new Map(ids.map(id => [id, []]));
+  for (const [a, b] of adjacency) {
+    if (nbrs.has(a) && nbrs.has(b)) { nbrs.get(a).push(b); nbrs.get(b).push(a); }
+  }
+  // Most-constrained territories choose first.
+  const order = [...ids].sort((a, b) => nbrs.get(b).length - nbrs.get(a).length);
+  const chosen = new Map();
+  const used = new Array(PALETTE.length).fill(0);
+  for (const id of order) {
+    const taken = nbrs.get(id).map(n => chosen.get(n)).filter(Boolean);
+    let best = null, bestScore = -Infinity;
+    PALETTE.forEach((cand, i) => {
+      const gap = taken.length ? Math.min(...taken.map(t => swatchGap(cand, t))) : 999;
+      const score = gap - used[i] * 10;
+      if (score > bestScore) { bestScore = score; best = i; }
+    });
+    used[best]++;
+    chosen.set(id, PALETTE[best]);
+  }
+  return chosen;
+}
+
+const TERRITORY_IDS = d.regions.flatMap(r => r.subs.map((_, i) => `${r.key}:${i}`));
+const TERRITORY_COLOR = colourTerritories(TERRITORY_IDS, d.adjacency || []);
 
 // A territory's chips: whole states, plus split states marked (S)/(N).
 const chipsFor = t => [
@@ -30,6 +73,7 @@ const chipsFor = t => [
 
 const regions = d.regions.map(r => ({
   ...r,
+  subs: r.subs.map((t, i) => ({ ...t, color: TERRITORY_COLOR.get(`${r.key}:${i}`).hex })),
   abbrs: r.states.map(s => ABBR[s] || s).concat(r.hasDC ? ['DC'] : []),
   countLabel: `${r.states.length} states${r.hasDC ? ' + DC' : ''}`,
 }));
@@ -41,30 +85,33 @@ const territoryTotal = regions.reduce((n, r) => n + (r.subs.length || 1), 0);
 // is offered a ring of candidate slots and takes the first that clears the
 // labels and markers already placed. Widths are estimated from the glyphs
 // because there's no text engine at build time.
-const CHAR_W = { default: 5.5, narrow: 2.9, wide: 8.6, upper: 6.7 };
+// Tuned for the 14px/700 label face used on the map.
+const CHAR_W = { default: 7.7, narrow: 4.1, wide: 12.0, upper: 9.4 };
 const textWidth = str => [...str].reduce((w, ch) => w +
   ('iljtfr.,\'!|:;'.includes(ch) ? CHAR_W.narrow
     : 'mwMW'.includes(ch) ? CHAR_W.wide
     : ch === ch.toUpperCase() && ch !== ch.toLowerCase() ? CHAR_W.upper
     : CHAR_W.default), 0);
 
-const LABEL_H = 11;
+const LABEL_H = 15;
 const PIN_R = 9;          // marker half-size to steer clear of
 const SLOTS = [
-  { dx: 11, dy: 0, anchor: 'start' },
-  { dx: -11, dy: 0, anchor: 'end' },
-  { dx: 0, dy: -13, anchor: 'middle' },
-  { dx: 0, dy: 15, anchor: 'middle' },
-  { dx: 10, dy: -11, anchor: 'start' },
-  { dx: -10, dy: -11, anchor: 'end' },
-  { dx: 10, dy: 13, anchor: 'start' },
-  { dx: -10, dy: 13, anchor: 'end' },
-  { dx: 0, dy: -25, anchor: 'middle' },
-  { dx: 0, dy: 27, anchor: 'middle' },
-  { dx: 14, dy: -22, anchor: 'start' },
-  { dx: -14, dy: -22, anchor: 'end' },
-  { dx: 14, dy: 24, anchor: 'start' },
-  { dx: -14, dy: 24, anchor: 'end' },
+  { dx: 12, dy: 0, anchor: 'start' },
+  { dx: -12, dy: 0, anchor: 'end' },
+  { dx: 0, dy: -15, anchor: 'middle' },
+  { dx: 0, dy: 17, anchor: 'middle' },
+  { dx: 11, dy: -14, anchor: 'start' },
+  { dx: -11, dy: -14, anchor: 'end' },
+  { dx: 11, dy: 16, anchor: 'start' },
+  { dx: -11, dy: 16, anchor: 'end' },
+  { dx: 0, dy: -30, anchor: 'middle' },
+  { dx: 0, dy: 32, anchor: 'middle' },
+  { dx: 15, dy: -28, anchor: 'start' },
+  { dx: -15, dy: -28, anchor: 'end' },
+  { dx: 15, dy: 30, anchor: 'start' },
+  { dx: -15, dy: 30, anchor: 'end' },
+  { dx: 0, dy: -45, anchor: 'middle' },
+  { dx: 0, dy: 47, anchor: 'middle' },
 ];
 const overlaps = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w &&
                            a.y < b.y + b.h && b.y < a.y + a.h;
@@ -75,7 +122,7 @@ function placeLabels(people) {
   const placed = [];
   // Crowded pins have the fewest workable slots, so they choose first.
   const order = people.map((p, i) => ({ p, i,
-    near: people.filter(q => Math.hypot(q.x - p.x, q.y - p.y) < 45).length }))
+    near: people.filter(q => Math.hypot(q.x - p.x, q.y - p.y) < 60).length }))
     .sort((a, b) => b.near - a.near || a.p.y - b.p.y);
 
   const out = new Array(people.length);
@@ -253,15 +300,15 @@ const html = `<title>Territory Map</title>
   path.borders{fill:none;stroke:var(--land-line);stroke-width:.7;stroke-linejoin:round;vector-effect:non-scaling-stroke;}
   path.nation{fill:none;stroke:var(--line-strong);stroke-width:1;vector-effect:non-scaling-stroke;}
 
-  .rfill{fill-opacity:calc(var(--fill-op) * var(--k,1));stroke:none;cursor:pointer;transition:fill-opacity .18s;}
-  .rfill.hover,.rfill.active{fill-opacity:calc(var(--fill-op-hi) * var(--k,1));}
+  .rfill{fill-opacity:var(--fill-op);stroke:none;cursor:pointer;transition:fill-opacity .18s;}
+  .rfill.hover,.rfill.active{fill-opacity:var(--fill-op-hi);}
   .rfill.dim{fill-opacity:.07;}
   .sborder{fill:none;stroke:var(--ink);stroke-opacity:.4;stroke-width:1.1;stroke-dasharray:4 3;
     vector-effect:non-scaling-stroke;stroke-linejoin:round;pointer-events:none;}
   .snum{fill:var(--ink);font:750 11px var(--sans);text-anchor:middle;dominant-baseline:central;pointer-events:none;
     paint-order:stroke;stroke:var(--panel);stroke-width:3.4px;stroke-linejoin:round;opacity:0;transition:opacity .25s;}
   .snum.show{opacity:.9;}
-  .rborder{fill:none;stroke:var(--ink);stroke-opacity:.45;stroke-width:1.6;vector-effect:non-scaling-stroke;
+  .rborder{fill:none;stroke:var(--ink);stroke-opacity:.62;stroke-width:2.4;vector-effect:non-scaling-stroke;
     stroke-linejoin:round;pointer-events:none;}
   .rlabel{fill:var(--ink);font:750 13px var(--sans);text-anchor:middle;dominant-baseline:central;pointer-events:none;
     paint-order:stroke;stroke:var(--panel);stroke-width:3.6px;stroke-linejoin:round;letter-spacing:.02em;}
@@ -278,9 +325,9 @@ const html = `<title>Territory Map</title>
   .pin .badgetx{font:700 8px var(--sans);fill:var(--ink);text-anchor:middle;dominant-baseline:central;}
   .pin.dim{opacity:.15;}
   .pin.off{display:none;}
-  .plabel{font:650 10px var(--sans);fill:var(--ink);pointer-events:none;
-    paint-order:stroke;stroke:var(--panel);stroke-width:3px;stroke-linejoin:round;
-    dominant-baseline:central;}
+  .plabel{font:700 14px var(--sans);fill:var(--ink);pointer-events:none;
+    paint-order:stroke;stroke:var(--panel);stroke-width:4.2px;stroke-linejoin:round;
+    letter-spacing:-.01em;dominant-baseline:central;}
   #pins.nonames .plabel{display:none;}
   .pin:hover .core{stroke:var(--ink);}
 
@@ -346,7 +393,7 @@ const html = `<title>Territory Map</title>
           <path class="state" d="${d.statePaths}"></path>
           <g id="regions">
             ${regions.map(r => r.subs.length
-              ? r.subs.map((t, i) => `<path class="rfill" data-key="${r.key}" d="${t.d}" fill="${r.color}" style="--k:${shade(i, r.subs.length)}"></path>`).join('')
+              ? r.subs.map(t => `<path class="rfill" data-key="${r.key}" d="${t.d}" fill="${t.color}"></path>`).join('')
               : `<path class="rfill" data-key="${r.key}" d="${r.d}" fill="${r.color}"></path>`).join('')}
           </g>
           <path class="borders" d="${d.borderPath}"></path>
@@ -384,7 +431,7 @@ const html = `<title>Territory Map</title>
 const ABBR = ${JSON.stringify(ABBR)};
 const MARKER = ${JSON.stringify(MARKER)};
 const GROUP_LABEL = ${JSON.stringify(Object.fromEntries(GROUPS.map(g => [g.key, g.label])))};
-const REGIONS = ${JSON.stringify(regions.map(r => ({ key: r.key, name: r.name, color: r.color, abbrs: r.abbrs, countLabel: r.countLabel, states: r.states, candidates: r.candidates, subs: r.subs.map(t => ({ name: t.name, states: t.states, chips: chipsFor(t) })) })))};
+const REGIONS = ${JSON.stringify(regions.map(r => ({ key: r.key, name: r.name, color: r.color, abbrs: r.abbrs, countLabel: r.countLabel, states: r.states, candidates: r.candidates, subs: r.subs.map(t => ({ name: t.name, states: t.states, chips: chipsFor(t), color: t.color })) })))};
 const PEOPLE = ${JSON.stringify(d.reps.map((r, i) => ({ name: r.name, city: r.city, role: r.role, group: DISPLAY_GROUP[r.group], state: r.state, region: r.region, x: r.x, y: r.y,
   count: r.group === 'team' ? 4 : 1, lab: LABELS[i] })))};
 const W=${d.W}, H=${d.H};
@@ -398,18 +445,26 @@ let active = null;
 
 const peopleIn = key => PEOPLE.filter(p => p.region === key);
 
+// A region no longer has one colour, so its swatch shows the territories in it.
+function swatchStyle(r){
+  if(!r.subs.length) return \`background:\${r.color}\`;
+  const n = r.subs.length;
+  const stops = r.subs.map((t,i)=>\`\${t.color} \${(i/n*100).toFixed(1)}% \${((i+1)/n*100).toFixed(1)}%\`);
+  return \`background:linear-gradient(135deg,\${stops.join(',')})\`;
+}
+
 // --- region cards ---
 REGIONS.forEach(r => {
   const who = peopleIn(r.key);
   const li = document.createElement('li');
   li.className = 'rcard'; li.dataset.key = r.key; li.tabIndex = 0;
   li.innerHTML =
-    \`<div class="rtop"><span class="swatch" style="background:\${r.color}"></span>
+    \`<div class="rtop"><span class="swatch" style="\${swatchStyle(r)}"></span>
        <span class="rname">\${r.name}</span>
        <span class="rcount">\${r.countLabel}</span></div>
      \${r.subs.length
        ? \`<div class="subs">\${r.subs.map((t,i)=>\`<div class="sub">
-            <span class="snumb" style="background:\${r.color}">\${i+1}</span>
+            <span class="snumb" style="background:\${t.color}">\${i+1}</span>
             <span class="sname">\${t.name}</span>
             <span class="abbrs">\${t.chips.map(a=>\`<span class="ab">\${a}</span>\`).join('')}</span>
           </div>\`).join('')}</div>\`

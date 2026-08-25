@@ -54,9 +54,12 @@ A region can be broken into sub-territories (`subs` in `src/build-future.mjs`,
 which must partition the region or the build fails). A territory can also take
 part of a state: `partial` clips the state at a parallel (Texas is cut along
 Austin's latitude), and the build checks the clipped area to catch the
-ring-winding mistake that would otherwise render the piece inside-out. They render as tonal bands
-with dashed dividers, numbered on the card and — once you click into the region
-— on the map.
+ring-winding mistake that would otherwise render the piece inside-out. Each territory gets its own
+colour, separated by dashed dividers and numbered on the card and — once you
+click into the region — on the map. Colours are assigned greedily against a
+territory adjacency graph built from the state topology, so no two territories
+that touch ever look alike; the heavier region border is what still groups them
+into regions.
 
 Named candidates under consideration for a region (currently Rich Cialella,
 Regional Business Director, for the Northeast) show on the region's card in

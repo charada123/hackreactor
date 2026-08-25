@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { geoAlbersUsa, geoPath, geoContains, geoArea } from 'd3-geo';
-import { feature, mesh, merge } from 'topojson-client';
+import { feature, mesh, merge, neighbors } from 'topojson-client';
 import polygonClipping from 'polygon-clipping';
 
 const topo = JSON.parse(readFileSync(new URL('./node_modules/us-atlas/states-10m.json', import.meta.url)));
@@ -260,6 +260,32 @@ const extraPaths = REGIONS.flatMap(r => r.extraDividers || [])
   .map(x => path({ type: 'MultiLineString', coordinates: partialBorder(x.between, x) }));
 const subBorderPath = [subMeshPath, ...cutPaths, ...extraPaths].filter(Boolean).join(' ');
 
+// ---- Which territories touch which ----
+// Feeds map colouring: neighbours must not end up the same colour. A split
+// state is treated as belonging to all of its halves here, which only adds
+// edges, so the colouring stays conservative.
+const territoryIdsByState = {};
+REGIONS.forEach(r => (r.subs || []).forEach((t, i) => {
+  const id = `${r.key}:${i}`;
+  for (const st of [...t.states, ...(t.partial || []).map(q => q.state)]) {
+    (territoryIdsByState[st] ||= []).push(id);
+  }
+}));
+
+const stateNeighbours = neighbors(geoms);
+const edges = new Set();
+const addEdge = (a, b) => { if (a !== b) edges.add([a, b].sort().join('|')); };
+geoms.forEach((g, i) => {
+  const mine = territoryIdsByState[g.properties.name] || [];
+  // the halves of a split state touch each other
+  mine.forEach(a => mine.forEach(b => addEdge(a, b)));
+  for (const j of stateNeighbours[i]) {
+    const theirs = territoryIdsByState[geoms[j].properties.name] || [];
+    mine.forEach(a => theirs.forEach(b => addEdge(a, b)));
+  }
+});
+const adjacency = [...edges].map(e => e.split('|'));
+
 // ---- Current people, bucketed into the proposed regions ----
 // Same roster as build.mjs; the state is derived from the plotted coordinate so
 // loose city labels ("NorCal", "CO / UT") still land somewhere sensible.
@@ -299,7 +325,8 @@ const placed = reps.map(r => {
 });
 
 writeFileSync(new URL('./futuredata.json', import.meta.url), JSON.stringify({
-  W, H, statePaths, borderPath, nationPath, regions, regionBorderPath, subBorderPath, reps: placed,
+  W, H, statePaths, borderPath, nationPath, regions, regionBorderPath, subBorderPath, adjacency,
+  reps: placed,
 }, null, 0));
 
 console.log('regions:', regions.map(r => `${r.name} (${r.states.length})${r.candidates.length ? ' candidate: ' + r.candidates.map(c => c.name + ' (' + c.role + ')').join(', ') : ''}${r.subs.length ? ' subs: ' + r.subs.map(t => t.name).join(' | ') : ''}`).join(', '));
