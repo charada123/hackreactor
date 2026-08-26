@@ -13,9 +13,13 @@ permissions:
   pages: write
   id-token: write
 
+# A fresh group name: three runs wedged on the old "pages" group and could not
+# be cancelled ("has not been queued yet"), so nothing new could schedule under
+# it. cancel-in-progress is false to match GitHub's own Pages starter workflow —
+# cancelling a Pages deployment mid-flight is what tends to wedge the group.
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: pages-deploy
+  cancel-in-progress: false
 
 jobs:
   deploy:
