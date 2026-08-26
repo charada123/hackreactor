@@ -203,7 +203,7 @@ const html = `<title>Territory Map</title>
     --land:#e5ebef; --land-line:#c3ccd4;
     --field:#0e7c7b; --trainer:#cf5f38; --team:#6d4a86; --prospect:#2f6f9f; --direct:#c23a86;
     --accent:#0e7c7b;
-    --region-ink:#1d5f8a;
+    --region-ink:#ffd23f; --region-halo:#12222e;
     --shadow:0 1px 2px rgba(20,40,60,.06),0 8px 24px rgba(20,40,60,.08);
     --radius:14px;
     --fill-op:.30; --fill-op-hi:.62;
@@ -217,7 +217,7 @@ const html = `<title>Territory Map</title>
       --land:#1a2833; --land-line:#2c404e;
       --field:#2bb9b3; --trainer:#e58256; --team:#a988c4; --prospect:#5b9bd5; --direct:#e274b4;
       --accent:#2bb9b3;
-      --region-ink:#7fc4ee;
+      --region-ink:#ffd23f; --region-halo:#08131c;
       --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
       --fill-op:.34; --fill-op-hi:.7;
     }
@@ -229,7 +229,7 @@ const html = `<title>Territory Map</title>
     --land:#e5ebef; --land-line:#c3ccd4;
     --field:#0e7c7b; --trainer:#cf5f38; --team:#6d4a86; --prospect:#2f6f9f; --direct:#c23a86;
     --accent:#0e7c7b;
-    --region-ink:#1d5f8a;
+    --region-ink:#ffd23f; --region-halo:#12222e;
     --shadow:0 1px 2px rgba(20,40,60,.06),0 8px 24px rgba(20,40,60,.08);
     --fill-op:.30; --fill-op-hi:.62;
   }
@@ -240,7 +240,7 @@ const html = `<title>Territory Map</title>
     --land:#1a2833; --land-line:#2c404e;
     --field:#2bb9b3; --trainer:#e58256; --team:#a988c4; --prospect:#5b9bd5; --direct:#e274b4;
     --accent:#2bb9b3;
-    --region-ink:#7fc4ee;
+    --region-ink:#ffd23f; --region-halo:#08131c;
     --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
     --fill-op:.34; --fill-op-hi:.7;
   }
@@ -286,7 +286,7 @@ const html = `<title>Territory Map</title>
   .rcard.hidden{display:none;}
   .rtop{display:flex;align-items:center;gap:9px;}
   .swatch{width:11px;height:11px;border-radius:3px;flex:none;}
-  .rname{font-weight:700;font-size:14.5px;letter-spacing:-.01em;color:var(--region-ink);}
+  .rname{font-weight:700;font-size:14.5px;letter-spacing:-.01em;}
   .rcount{margin-left:auto;font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;
     font-variant-numeric:tabular-nums;}
   .abbrs{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;}
@@ -337,7 +337,7 @@ const html = `<title>Territory Map</title>
   .rborder{fill:none;stroke:var(--ink);stroke-opacity:.62;stroke-width:2.4;vector-effect:non-scaling-stroke;
     stroke-linejoin:round;pointer-events:none;}
   .rlabel{fill:var(--region-ink);font:750 17px var(--sans);text-anchor:middle;dominant-baseline:central;pointer-events:none;
-    paint-order:stroke;stroke:var(--panel);stroke-width:4.6px;stroke-linejoin:round;letter-spacing:.02em;}
+    paint-order:stroke;stroke:var(--region-halo);stroke-width:4.6px;stroke-linejoin:round;letter-spacing:.02em;}
   .rlabel.dim{opacity:.3;}
   .rlabel.hide{opacity:0;}
 
