@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+}
+
+body {
+  @apply bg-surface-soft text-ink antialiased;
+  font-feature-settings: "ss01", "cv01";
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .container-x {
+    @apply mx-auto w-full max-w-6xl px-5 sm:px-8;
+  }
+
+  .card {
+    @apply rounded-2xl border border-black/[0.06] bg-white shadow-card;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition;
+  }
+  .btn-primary {
+    @apply btn bg-brand-500 text-white hover:bg-brand-600 active:scale-[0.98];
+  }
+  .btn-ghost {
+    @apply btn border border-black/10 bg-white text-ink hover:bg-surface-mute;
+  }
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold;
+  }
+
+  .eyebrow {
+    @apply text-xs font-bold uppercase tracking-[0.14em] text-brand-500;
+  }
+}
+
+/* ---- Video interview room animations ---- */
+@keyframes ivBreathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3.5px); }
+}
+@keyframes ivSway {
+  0%, 100% { transform: rotate(-1deg); }
+  50% { transform: rotate(1.1deg); }
+}
+@keyframes ivBlink {
+  0%, 93%, 100% { transform: scaleY(0); }
+  96% { transform: scaleY(1); }
+}
+@keyframes ivGlow {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.5; }
+}
+@keyframes ivPing {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(2.3); opacity: 0; }
+}
+@keyframes ivFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.iv-breathe { animation: ivBreathe 4.5s ease-in-out infinite; }
+.iv-sway { animation: ivSway 7s ease-in-out infinite; transform-origin: 50% 90%; }
+.iv-blink { transform-origin: center; animation: ivBlink 6s infinite; }
+.iv-blink.delay { animation-delay: 0.15s; }
+.iv-fade { animation: ivFade 0.5s ease both; }
+@media (prefers-reduced-motion: reduce) {
+  .iv-breathe, .iv-sway, .iv-blink { animation: none !important; }
+}

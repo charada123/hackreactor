@@ -1,3 +1,10 @@
+> 🌐 **GreenPass** — the AI-powered USCIS green-card interview practice **web app**
+> (Next.js + Claude; voice-to-voice video interview room) lives in [`web/`](web/).
+> See its README to run it or one-click **deploy to Vercel**.
+>
+> 📱 The **I-485 Interview Prep** mobile app (iOS + Android, Expo) lives in
+> [`interview-prep/`](interview-prep/).
+
 # Sales Rep Territory Map
 
 An interactive US map of the field sales team. Single self-contained page —
@@ -76,6 +83,16 @@ the people already plotted inside it.
 1. Push to the branch (already wired to `.github/workflows/deploy.yml`).
 2. In the repo: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 3. The workflow publishes `index.html` and prints the public URL in the run summary.
+
+## Deploy (Vercel — the GreenPass web app)
+
+The Vercel project builds with **Root Directory `web`** (`web/vercel.json` sets
+the framework). That directory only exists on branches that carry the web app,
+so Vercel's **Production Branch** must be set to one of them — pointing it at a
+map-only branch makes every production build fail before it starts with
+`The specified Root Directory "web" does not exist`.
+
+This branch carries both the map and `web/`, so it is safe to deploy from.
 
 ## Rebuilding the map
 
