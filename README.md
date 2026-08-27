@@ -63,6 +63,11 @@ into regions. Region names are drawn in one shared yellow (`--region-ink`) over 
 (`--region-halo`), which keeps them visible in both themes and distinct from the
 rep name labels drawn in the body ink.
 
+Future considerations carry a `channel` where we know it (direct or
+independent). Shape shows the channel — circle for direct, square for
+indirect/independent — and a dashed hollow outline marks them as future rather
+than current, so both facts read off one marker.
+
 Named candidates under consideration for a region (currently Rich Cialella,
 Regional Business Director, for the Northeast) show on the region's card in
 the sidebar.

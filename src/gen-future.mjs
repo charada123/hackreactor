@@ -182,16 +182,31 @@ const LABELS = placeLabels(d.reps, regionLabelBoxes(d.regions));
 // (the team keeps a count badge, since it stands for four people).
 const DISPLAY_GROUP = { direct: 'direct', field: 'field', trainer: 'field',
                         team: 'field', prospect: 'prospect' };
-const GROUPS = [
-  { key: 'direct', label: 'Direct rep' },
-  { key: 'field', label: 'Indirect rep' },
-  { key: 'prospect', label: 'Future consideration' },
-];
-const MARKER = {
-  direct: '<circle class="core" r="6.5"></circle>',
-  field: '<rect class="core" x="-6" y="-6" width="12" height="12" rx="2.5"></rect>',
-  prospect: '<circle class="core" r="7"></circle>',
+
+// Two things to show at once: whether someone is on the map today or under
+// consideration, and which channel they sell through. Shape carries the
+// channel (circle = direct, square = indirect/independent) and the outline
+// carries the status (solid fill = today, dashed hollow = future). A future
+// consideration whose channel we weren't told keeps the neutral blue ring.
+const markerKey = r => {
+  const g = DISPLAY_GROUP[r.group];
+  return g === 'prospect' && r.channel ? `prospect:${r.channel}` : g;
 };
+const CIRCLE = '<circle class="core" r="6.5"></circle>';
+const SQUARE = '<rect class="core" x="-6" y="-6" width="12" height="12" rx="2.5"></rect>';
+const RING = '<circle class="core" r="7"></circle>';
+const RING_SQUARE = '<rect class="core" x="-6.5" y="-6.5" width="13" height="13" rx="2.5"></rect>';
+const GROUPS = [
+  { key: 'direct', cls: 'direct', label: 'Direct rep', marker: CIRCLE },
+  { key: 'field', cls: 'field', label: 'Indirect rep', marker: SQUARE },
+  { key: 'prospect:direct', cls: 'prospect ch-direct',
+    label: 'Future consideration · direct', marker: RING },
+  { key: 'prospect:independent', cls: 'prospect ch-independent',
+    label: 'Future consideration · independent', marker: RING_SQUARE },
+  { key: 'prospect', cls: 'prospect', label: 'Future consideration', marker: RING },
+];
+const MARKER = Object.fromEntries(GROUPS.map(g => [g.key, g.marker]));
+const MARKER_CLASS = Object.fromEntries(GROUPS.map(g => [g.key, g.cls]));
 
 const html = `<title>Territory Map</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -298,6 +313,8 @@ const html = `<title>Territory Map</title>
   .rpeople .pd.direct{background:var(--direct);border-radius:50%}
   .rpeople .pd.field{background:var(--field);border-radius:2px}
   .rpeople .pd.prospect{background:transparent;border:1.5px dashed var(--prospect);border-radius:50%}
+  .rpeople .pd.prospect.ch-direct{border-color:var(--direct)}
+  .rpeople .pd.prospect.ch-independent{border-color:var(--field);border-radius:2px}
   .rnone{margin-top:8px;font-size:11.5px;color:var(--faint);font-style:italic;}
   .subs{margin-top:8px;display:flex;flex-direction:column;gap:6px;}
   .sub{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
@@ -347,6 +364,8 @@ const html = `<title>Territory Map</title>
   .pin .core{stroke:var(--panel);stroke-width:1.8;}
   .pin.field .core{fill:var(--field)} .pin.direct .core{fill:var(--direct)}
   .pin.prospect .core{fill:var(--panel);stroke:var(--prospect);stroke-width:2.4;stroke-dasharray:3.4 2.6;}
+  .pin.prospect.ch-direct .core{stroke:var(--direct);}
+  .pin.prospect.ch-independent .core{stroke:var(--field);}
   .pin .badge{fill:var(--panel);stroke:var(--field);stroke-width:1.2;}
   .pin .badgetx{font:700 8px var(--sans);fill:var(--ink);text-anchor:middle;dominant-baseline:central;}
   .pin.dim{opacity:.15;}
@@ -436,10 +455,11 @@ const html = `<title>Territory Map</title>
       </svg>
       <div class="maplegend" id="legend">
         ${GROUPS.map(g => {
-          const n = d.reps.filter(r => DISPLAY_GROUP[r.group] === g.key).length;
-          return `<button class="lg ${g.key}" data-g="${g.key}" aria-pressed="true">` +
+          const n = d.reps.filter(r => markerKey(r) === g.key).length;
+          if (!n) return '';
+          return `<button class="lg" data-g="${g.key}" aria-pressed="true">` +
             `<svg width="17" height="17" viewBox="-9 -9 18 18" aria-hidden="true">` +
-            `<g class="pin ${g.key}">${MARKER[g.key]}</g></svg>` +
+            `<g class="pin ${g.cls}">${g.marker}</g></svg>` +
             `${g.label}<span class="n">${n}</span></button>`;
         }).join('')}
       </div>
@@ -458,7 +478,8 @@ const ABBR = ${JSON.stringify(ABBR)};
 const MARKER = ${JSON.stringify(MARKER)};
 const GROUP_LABEL = ${JSON.stringify(Object.fromEntries(GROUPS.map(g => [g.key, g.label])))};
 const REGIONS = ${JSON.stringify(regions.map(r => ({ key: r.key, name: r.name, color: r.color, abbrs: r.abbrs, countLabel: r.countLabel, states: r.states, candidates: r.candidates, subs: r.subs.map(t => ({ name: t.name, states: t.states, chips: chipsFor(t), color: t.color })) })))};
-const PEOPLE = ${JSON.stringify(d.reps.map((r, i) => ({ name: r.name, city: r.city, role: r.role, group: DISPLAY_GROUP[r.group], state: r.state, region: r.region, x: r.x, y: r.y,
+const PEOPLE = ${JSON.stringify(d.reps.map((r, i) => ({ name: r.name, city: r.city, role: r.role, group: markerKey(r), cls: MARKER_CLASS[markerKey(r)],
+  state: r.state, region: r.region, x: r.x, y: r.y,
   count: r.group === 'team' ? 4 : 1, lab: LABELS[i] })))};
 const W=${d.W}, H=${d.H};
 
@@ -496,7 +517,7 @@ REGIONS.forEach(r => {
           </div>\`).join('')}</div>\`
        : \`<div class="abbrs">\${r.abbrs.map(a=>\`<span class="ab">\${a}</span>\`).join('')}</div>\`}\` +
     (who.length
-      ? \`<div class="rpeople">\${who.map(p=>\`<span class="pn"><span class="pd \${p.group}"></span>\${p.name}</span>\`).join('')}</div>\`
+      ? \`<div class="rpeople">\${who.map(p=>\`<span class="pn"><span class="pd \${p.cls}"></span>\${p.name}</span>\`).join('')}</div>\`
       : \`<div class="rnone">No one on the map here yet.</div>\`) +
     r.candidates.map(c=>\`<div class="rcand"><span class="lbl">Under consideration</span>
        <span class="cn">\${c.name}</span><span class="cr">\${c.role}</span></div>\`).join('');
@@ -508,7 +529,7 @@ REGIONS.forEach(r => {
 // --- people on the map ---
 PEOPLE.forEach(p => {
   const g = document.createElementNS('http://www.w3.org/2000/svg','g');
-  g.setAttribute('class','pin '+p.group);
+  g.setAttribute('class','pin '+p.cls);
   g.setAttribute('transform',\`translate(\${p.x} \${p.y})\`);
   g.dataset.region = p.region;
   g.dataset.group = p.group;

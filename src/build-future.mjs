@@ -300,7 +300,11 @@ const reps = [
   { name: 'Taylor Macey', city: 'Los Angeles, CA', role: 'Direct Sales Rep · SoCal', lat: 34.0522, lng: -118.2437, group: 'direct' },
   { name: 'Kyle Shapero', city: 'Orlando, FL', role: 'Direct Sales Rep · FL', lat: 28.5383, lng: -81.3792, group: 'direct' },
   { name: 'Nick', city: 'Colorado Springs, CO', role: 'Direct Sales Rep · Colorado', lat: 38.8339, lng: -104.8214, group: 'direct' },
-  { name: 'Jonathan Butto', city: 'Southern Florida', role: 'Sr. TM · Prospect', lat: 25.7617, lng: -80.1918, group: 'prospect' },
+  // `channel` marks a future consideration as direct or independent where we
+  // know it; the ones without it are left unspecified rather than guessed.
+  { name: 'Jonathan Butto', city: 'Miami, FL', role: 'Direct sales · Sr. TM', lat: 25.7617, lng: -80.1918, group: 'prospect', channel: 'direct' },
+  { name: 'Tanner Wiggins', city: 'San Diego, CA', role: 'Direct sales · SoCal', lat: 32.7157, lng: -117.1611, group: 'prospect', channel: 'direct' },
+  { name: 'Matt Hughston', city: 'Charlotte, NC', role: 'Independent sales · Carolinas', lat: 35.2271, lng: -80.8431, group: 'prospect', channel: 'independent' },
   { name: 'Manny Robelo', city: 'Boston, MA', role: 'DSM · Prospect', lat: 42.3601, lng: -71.0589, group: 'prospect' },
   { name: 'Seth Cooley', city: 'CO / UT', role: 'DSM · Prospect', lat: 40.7608, lng: -111.8910, group: 'prospect' },
   { name: 'Scott Kelly', city: 'Texas', role: 'RBD · Prospect', lat: 29.7604, lng: -95.3698, group: 'prospect' },
@@ -319,7 +323,7 @@ const placed = reps.map(r => {
   const st = stateAt(r.lng, r.lat);
   if (!st) throw new Error(`no state found for ${r.name}`);
   return {
-    ...r, state: st, region: regionKeyByStateName[st],
+    ...r, state: st, region: regionKeyByStateName[st], channel: r.channel || null,
     x: +p[0].toFixed(1), y: +p[1].toFixed(1),
   };
 });

@@ -31,7 +31,9 @@ const reps = [
   { name: 'Kyle Shapero', city: 'Orlando, FL', role: 'Direct Sales Rep · FL', lat: 28.5383, lng: -81.3792, group: 'direct', views: ['sales'] },
   { name: 'Nick', city: 'Colorado Springs, CO', role: 'Direct Sales Rep · Colorado', lat: 38.8339, lng: -104.8214, group: 'direct', views: ['sales'] },
   // Recruiting targets (prospects) — shown distinctly
-  { name: 'Jonathan Butto', city: 'Southern Florida', role: 'Sr. TM · Prospect', lat: 25.7617, lng: -80.1918, group: 'prospect', views: ['sales'] },
+  { name: 'Jonathan Butto', city: 'Miami, FL', role: 'Direct sales · Sr. TM · Prospect', lat: 25.7617, lng: -80.1918, group: 'prospect', views: ['sales'] },
+  { name: 'Tanner Wiggins', city: 'San Diego, CA', role: 'Direct sales · SoCal · Prospect', lat: 32.7157, lng: -117.1611, group: 'prospect', views: ['sales'] },
+  { name: 'Matt Hughston', city: 'Charlotte, NC', role: 'Independent sales · Carolinas · Prospect', lat: 35.2271, lng: -80.8431, group: 'prospect', views: ['sales'] },
   { name: 'Manny Robelo', city: 'Boston, MA', role: 'DSM · Prospect', lat: 42.3601, lng: -71.0589, group: 'prospect', views: ['sales'] },
   { name: 'Seth Cooley', city: 'CO / UT', role: 'DSM · Prospect', lat: 40.7608, lng: -111.8910, group: 'prospect', views: ['sales'] },
   { name: 'Scott Kelly', city: 'Texas', role: 'RBD · Prospect', lat: 29.7604, lng: -95.3698, group: 'prospect', views: ['sales'] },
